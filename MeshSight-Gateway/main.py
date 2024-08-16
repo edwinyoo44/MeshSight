@@ -6,20 +6,19 @@ from alembic.config import Config
 from alembic import command
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
-from contextlib import asynccontextmanager
+from apscheduler.triggers.interval import IntervalTrigger
 from fastapi import FastAPI
 from fastapi.logger import logger as fastapi_logger
 from fastapi.middleware.cors import CORSMiddleware
-from services.AnalyzeService import AnalyzeService
+from services.SystemSchedulerService import SystemSchedulerService
 from services.MqttListenerService import MqttListenerService
 from utils.ConfigUtil import ConfigUtil
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # 設定檔讀取
 config = ConfigUtil.read_config()
-
 
 # FastAPI app 設定
 app = FastAPI()
@@ -64,9 +63,11 @@ async def start_mqtt_listener():
 
 def start_scheduler_job():
     logger.info("正在啟動排程任務......")
-    scheduler = AsyncIOScheduler()
-    scheduler.add_job(AnalyzeService().analyze_active_device, CronTrigger(minute=0))
-    scheduler.start()
+    scheduler_async = AsyncIOScheduler()
+    scheduler_async.add_job(
+        SystemSchedulerService().analyze_active_device, CronTrigger(minute=0)
+    )
+    scheduler_async.start()
 
 
 async def main():

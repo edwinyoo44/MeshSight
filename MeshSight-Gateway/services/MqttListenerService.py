@@ -69,8 +69,9 @@ class MqttListenerService:
         try:
             # 處理訊息邏輯
             topic: str = message.topic.value
-            # 排除韓以下內容的 topic
+            # 排除含以下內容的 topic
             if "/2/stat/" in topic:
+                # Meshtastic Firmware 2.4.1.394e0e1 開始棄用
                 return
 
             # 解析訊息
@@ -123,6 +124,7 @@ class MqttListenerService:
                 message_json["to"] = getattr(mp, "to")
                 message_json["type"] = "unknown"
                 message_json["topic"] = topic
+                # meshtastic protobuf 定義 https://github.com/meshtastic/protobufs
                 if mp.decoded.portnum == portnums_pb2.MAP_REPORT_APP:
                     mapreport = mqtt_pb2.MapReport()
                     mapreport.ParseFromString(mp.decoded.payload)
