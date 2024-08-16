@@ -1,0 +1,17 @@
+mqtt:
+  host: "mqtt.meshtastic.org"
+  port: 1883
+  identifier: "MeshSight-Gateway"
+  username: "meshdev"
+  password: "large4cats"
+  topics: ["msh/TW/#", "msh/TW/#"]
+meshtastic:
+  channels:
+    - name: "LongFast"
+      key: "1PG7OiApB1nwvP+rz05pAQ==" # aka AQ==
+postgres:
+  host: "MeshSight-Gateway-PostgreSQL"
+  port: "5432"
+  database: "postgres"
+  username: "postgres"
+  password: "changeme"

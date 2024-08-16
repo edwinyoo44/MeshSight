@@ -1,0 +1,38 @@
+# docker compose service
+services:
+  MeshSight-Gateway:
+    build:
+      context: ./MeshSight-Gateway
+      dockerfile: Dockerfile
+    image: meshsight-gateway:0.0.1
+    container_name: MeshSight-Gateway
+    restart: unless-stopped
+    ports:
+      - "8331:80"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./MeshSight-Gateway_config:/workspace/config
+    networks:
+      - meshsight-network
+  MeshSight-Gateway-PostgreSQL:
+    image: postgres:16
+    container_name: MeshSight-Gateway-PostgreSQL
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    command:
+      - 'postgres'
+      - '-c'
+      - 'max_connections=1000'
+      - '-c'
+      - 'idle_in_transaction_session_timeout=30s'
+    restart: unless-stopped
+    volumes:
+      - ./MeshSight-Gateway-PostgreSQL_data:/var/lib/postgresql/data
+    networks:
+      - meshsight-network
+# docker compose network
+networks:
+  meshsight-network:
+    name: meshsight-network
+    external: true
