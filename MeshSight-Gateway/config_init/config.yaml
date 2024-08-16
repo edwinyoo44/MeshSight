@@ -1,3 +1,4 @@
+timezone: "Asia/Taipei"
 mqtt:
   host: "mqtt.meshtastic.org"
   port: 1883
