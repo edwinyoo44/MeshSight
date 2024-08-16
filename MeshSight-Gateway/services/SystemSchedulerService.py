@@ -18,7 +18,6 @@ class SystemSchedulerService:
     # 分析當下小時，前一小時的活躍裝置數量，並存入資料庫
     async def analyze_active_device(self):
         try:
-            self.logger.error("檢查點 1")
             # 取得前一小時時間
             last_hour = datetime.now(timezone.utc).replace(
                 minute=0, second=0, microsecond=0

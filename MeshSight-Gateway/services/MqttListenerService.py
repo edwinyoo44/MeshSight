@@ -86,8 +86,8 @@ class MqttListenerService:
                     payload = message_json["payload"]
                     node_info = mesh_pb2.User()
                     node_info.id = payload.get("id")
-                    node_info.long_name = payload.get("longname", None)
-                    node_info.short_name = payload.get("shortname", None)
+                    # node_info.long_name = payload.get("longname", None) # 解析 emoji 會有問題
+                    # node_info.short_name = payload.get("shortname", None) # 解析 emoji 會有問題
                     node_info.hw_model = payload.get("hardware", None)
                     node_info.role = payload.get("role", None)
                     data = json.loads(
@@ -285,8 +285,8 @@ class MqttListenerService:
             node_info = await self.create_or_update_node_info(
                 NodeInfo(
                     node_id=message_json.get("from"),
-                    long_name=payload.get("long_name"),
-                    short_name=payload.get("short_name"),
+                    long_name=payload.get("long_name", None),
+                    short_name=payload.get("short_name", None),
                     role=payload.get("role", None),
                     hw_model=(
                         payload.get("hw_model", None)
@@ -677,8 +677,16 @@ class MqttListenerService:
                     update(NodeInfo)
                     .where(NodeInfo.node_id == node_info.node_id)
                     .values(
-                        long_name=node_info.long_name,
-                        short_name=node_info.short_name,
+                        long_name=(
+                            node_info.long_name
+                            if node_info.long_name is not None
+                            else existing_node_info.long_name
+                        ),
+                        short_name=(
+                            node_info.short_name
+                            if node_info.short_name is not None
+                            else existing_node_info.short_name
+                        ),
                         hw_model=(
                             node_info.hw_model
                             if node_info.hw_model is not None

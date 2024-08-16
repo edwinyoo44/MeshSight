@@ -13,8 +13,8 @@ class NodeInfo(EntityMeta):
         nullable=False,
         primary_key=True,
     )
-    long_name = sa.Column(sa.String(64), nullable=False)
-    short_name = sa.Column(sa.String(16), nullable=False)
+    long_name = sa.Column(sa.String(64), nullable=False, default="UNK")
+    short_name = sa.Column(sa.String(16), nullable=False, default="UNK")
     hw_model = sa.Column(sa.String(64), nullable=True)
     is_licensed = sa.Column(sa.Boolean, nullable=False, default=False)
     role = sa.Column(sa.String(16), nullable=False, default="CLIENT")
