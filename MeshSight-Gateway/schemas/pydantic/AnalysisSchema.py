@@ -11,3 +11,12 @@ class AnalysisActiveHourlyRecordsItem(BaseModel):
 
 class AnalysisActiveHourlyRecordsResponse(BaseModel):
     items: List[AnalysisActiveHourlyRecordsItem]
+
+
+class AnalysisHardwareStatisticsItem(BaseModel):
+    hardware: str  # 硬體名稱
+    count: int  # 硬體數量
+
+
+class AnalysisHardwareStatisticsResponse(BaseModel):
+    items: List[AnalysisHardwareStatisticsItem]

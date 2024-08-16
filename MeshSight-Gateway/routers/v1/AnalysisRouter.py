@@ -1,10 +1,12 @@
-from datetime import date, datetime, time
-
 import pytz
+from datetime import date, datetime, time
 from fastapi import APIRouter, Depends
 from schemas.pydantic.BaseSchema import BaseResponse
 from services.AnalysisService import AnalysisService
-from schemas.pydantic.AnalysisSchema import AnalysisActiveHourlyRecordsResponse
+from schemas.pydantic.AnalysisSchema import (
+    AnalysisActiveHourlyRecordsResponse,
+    AnalysisHardwareStatisticsResponse,
+)
 from utils.ConfigUtil import ConfigUtil
 
 config_timezone = pytz.timezone(ConfigUtil.read_config()["timezone"])
@@ -30,6 +32,27 @@ async def get_active_hourly_records(
             status="success",
             message="success",
             data=await analysisService.active_hourly_records(start, end),
+        )
+
+    except Exception as e:
+        return BaseResponse(
+            status="error",
+            message=str(e),
+            data=None,
+        )
+
+
+# 取得硬體統計
+@router.get(
+    "/hardware-statistics",
+    response_model=BaseResponse[AnalysisHardwareStatisticsResponse],
+)
+async def get_hardware_statistics(analysisService: AnalysisService = Depends()):
+    try:
+        return BaseResponse(
+            status="success",
+            message="success",
+            data=await analysisService.hardware_statistics(),
         )
 
     except Exception as e:
