@@ -1,3 +1,4 @@
+from typing import Optional
 import pytz
 from datetime import date, datetime, time
 from fastapi import APIRouter, Depends
@@ -16,7 +17,7 @@ router = APIRouter(prefix="/v1/analysis", tags=["analysis"])
 
 @router.get(
     "/active-hourly-records",
-    response_model=BaseResponse[AnalysisActiveHourlyRecordsResponse],
+    response_model=BaseResponse[Optional[AnalysisActiveHourlyRecordsResponse]],
 )
 async def get_active_hourly_records(
     start: str = datetime.combine(date.today(), time())
@@ -45,7 +46,7 @@ async def get_active_hourly_records(
 # 分布統計
 @router.get(
     "/distribution/{type}",
-    response_model=BaseResponse[AnalysisDistributionResponse],
+    response_model=BaseResponse[Optional[AnalysisDistributionResponse]],
 )
 async def get_firmware_statistics(
     type: str, analysisService: AnalysisService = Depends()

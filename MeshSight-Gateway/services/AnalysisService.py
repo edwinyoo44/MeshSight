@@ -32,8 +32,12 @@ class AnalysisService:
         self, start: str, end: str
     ) -> AnalysisActiveHourlyRecordsResponse:
         try:
-            start_time = datetime.fromisoformat(start)
-            end_time = datetime.fromisoformat(end)
+            try:
+                start_time = datetime.fromisoformat(start)
+                end_time = datetime.fromisoformat(end)
+            except ValueError:
+                raise BusinessLogicException("查詢日期格式錯誤")
+
             active_hourly_records = (
                 self.analysisDeviceActiveHourlyRepository.fetch_active_hourly_records(
                     start_time, end_time
