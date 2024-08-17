@@ -1,3 +1,6 @@
+import inspect
+
+import pytz
 from configs.Database import (
     get_db_connection,
     get_db_connection_async,
@@ -6,9 +9,11 @@ from typing import List
 from fastapi import Depends
 from models.NodeInfoModel import NodeInfo
 from schemas.pydantic.AnalysisSchema import AnalysisDistributionItem
+from schemas.pydantic.NodeSchema import InfoItem
 from sqlalchemy import desc, select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
+from utils.ConfigUtil import ConfigUtil
 
 
 class NodeInfoRepository:
@@ -20,6 +25,7 @@ class NodeInfoRepository:
         db: Session = Depends(get_db_connection),
         db_async: AsyncSession = Depends(get_db_connection_async),
     ) -> None:
+        self.config = ConfigUtil.read_config()
         self.db = db
         self.db_async = db_async
 
@@ -72,3 +78,41 @@ class NodeInfoRepository:
             AnalysisDistributionItem(name=x.role, count=x.count) for x in result
         ]
         return items
+
+    async def fetch_node_info_by_node_id(self, node_id: int) -> InfoItem:
+        try:
+            query = await self.db_async.execute(
+                select(NodeInfo).where(NodeInfo.node_id == node_id)
+            )
+            result = query.fetchone()
+            if not result:
+                return None
+            result = result[0]
+            return InfoItem(
+                nodeId=result.node_id,
+                longName=result.long_name,
+                shortName=result.short_name,
+                hardware=result.hw_model,
+                isLicensed=result.is_licensed,
+                role=result.role,
+                firmware=result.firmware_version,
+                loraRegion=result.lora_region,
+                loraModemPreset=result.lora_modem_preset,
+                hasDefaultChannel=result.has_default_channel,
+                numOnlineLocalNodes=result.num_online_local_nodes,
+                updateAt=result.update_at.astimezone(
+                    pytz.timezone(self.config["timezone"])
+                ).isoformat(),
+                channel=(
+                    f"{result.topic.split('/')[-2]}(MapReport)"
+                    if result.topic.split("/")[-2] == "map"
+                    else (
+                        f"{result.topic.split('/')[-2]}(json)"
+                        if result.topic.split("/")[-3] == "json"
+                        else result.topic.split("/")[-2]
+                    )
+                ),
+            )
+
+        except Exception as e:
+            raise Exception(f"{inspect.currentframe().f_code.co_name}: {str(e)}")
