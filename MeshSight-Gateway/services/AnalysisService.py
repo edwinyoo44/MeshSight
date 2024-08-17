@@ -61,6 +61,10 @@ class AnalysisService:
         try:
             if type == "hardware":
                 items = await self.nodeInfoRepository.fetch_distribution_hardware()
+            elif type == "firmware":
+                items = await self.nodeInfoRepository.fetch_distribution_firmware()
+            elif type == "role":
+                items = await self.nodeInfoRepository.fetch_distribution_role()
             else:
                 raise BusinessLogicException("不支援的分布類型")
             return AnalysisDistributionResponse(items=items)

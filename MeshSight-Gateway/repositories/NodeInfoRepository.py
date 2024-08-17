@@ -42,3 +42,33 @@ class NodeInfoRepository:
             for x in result
         ]
         return items
+
+    async def fetch_distribution_hardware(self) -> List[AnalysisDistributionItem]:
+        query = await self.db_async.execute(
+            select(
+                func.coalesce(NodeInfo.hw_model, "Unknown").label("hw_model"),
+                func.count(func.coalesce(NodeInfo.hw_model, "Unknown")).label("count"),
+            )
+            .group_by("hw_model")
+            .order_by(desc("count"))
+        )
+        result = query.fetchall()
+        items: List[AnalysisDistributionItem] = [
+            AnalysisDistributionItem(name=x.hw_model, count=x.count) for x in result
+        ]
+        return items
+
+    async def fetch_distribution_role(self) -> List[AnalysisDistributionItem]:
+        query = await self.db_async.execute(
+            select(
+                func.coalesce(NodeInfo.role, "Unknown").label("role"),
+                func.count(func.coalesce(NodeInfo.role, "Unknown")).label("count"),
+            )
+            .group_by("role")
+            .order_by(desc("count"))
+        )
+        result = query.fetchall()
+        items: List[AnalysisDistributionItem] = [
+            AnalysisDistributionItem(name=x.role, count=x.count) for x in result
+        ]
+        return items
