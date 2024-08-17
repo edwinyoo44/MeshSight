@@ -28,11 +28,11 @@ from models.NodeInfoModel import NodeInfo
 from models.NodeModel import Node
 from models.NodeNeighborEdgeModel import NodeNeighborEdge
 from models.NodeNeighborInfoModel import NodeNeighborInfo
-from models.NodePosition import NodePosition
-from models.NodeTelemetryAirQuality import NodeTelemetryAirQuality
-from models.NodeTelemetryDevice import NodeTelemetryDevice
-from models.NodeTelemetryEnvironment import NodeTelemetryEnvironment
-from models.NodeTelemetryPower import NodeTelemetryPower
+from models.NodePositionModel import NodePosition
+from models.NodeTelemetryAirQualityModel import NodeTelemetryAirQuality
+from models.NodeTelemetryDeviceModel import NodeTelemetryDevice
+from models.NodeTelemetryEnvironmentModel import NodeTelemetryEnvironment
+from models.NodeTelemetryPowerModel import NodeTelemetryPower
 from sqlalchemy import delete, update
 from sqlalchemy.future import select
 from utils.ConfigUtil import ConfigUtil

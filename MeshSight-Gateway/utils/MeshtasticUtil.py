@@ -1,6 +1,4 @@
 import logging
-import traceback
-import yaml
 
 logger = logging.getLogger(__name__)
 
