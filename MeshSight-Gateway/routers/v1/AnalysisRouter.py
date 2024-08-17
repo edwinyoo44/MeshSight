@@ -5,7 +5,7 @@ from schemas.pydantic.BaseSchema import BaseResponse
 from services.AnalysisService import AnalysisService
 from schemas.pydantic.AnalysisSchema import (
     AnalysisActiveHourlyRecordsResponse,
-    AnalysisHardwareStatisticsResponse,
+    AnalysisDistributionResponse,
 )
 from utils.ConfigUtil import ConfigUtil
 
@@ -42,17 +42,19 @@ async def get_active_hourly_records(
         )
 
 
-# 取得硬體統計
+# 分布統計
 @router.get(
-    "/hardware-statistics",
-    response_model=BaseResponse[AnalysisHardwareStatisticsResponse],
+    "/distribution/{type}",
+    response_model=BaseResponse[AnalysisDistributionResponse],
 )
-async def get_hardware_statistics(analysisService: AnalysisService = Depends()):
+async def get_firmware_statistics(
+    type: str, analysisService: AnalysisService = Depends()
+):
     try:
         return BaseResponse(
             status="success",
             message="success",
-            data=await analysisService.hardware_statistics(),
+            data=await analysisService.distribution(type),
         )
 
     except Exception as e:

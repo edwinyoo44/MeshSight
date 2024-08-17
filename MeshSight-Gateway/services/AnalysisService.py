@@ -7,7 +7,7 @@ from fastapi import Depends
 from schemas.pydantic.AnalysisSchema import (
     AnalysisActiveHourlyRecordsItem,
     AnalysisActiveHourlyRecordsResponse,
-    AnalysisHardwareStatisticsResponse,
+    AnalysisDistributionResponse,
 )
 from repositories.AnalysisDeviceActiveHourlyRepository import (
     AnalysisDeviceActiveHourlyRepository,
@@ -57,10 +57,13 @@ class AnalysisService:
             self.logger.error(f"{inspect.currentframe().f_code.co_name}: {str(e)}")
             raise Exception("內部伺服器錯誤，請稍後再試")
 
-    async def hardware_statistics(self) -> AnalysisHardwareStatisticsResponse:
+    async def distribution(self, type: str) -> AnalysisDistributionResponse:
         try:
-            items = await self.nodeInfoRepository.fetch_hardware_statistics()
-            return AnalysisHardwareStatisticsResponse(items=items)
+            if type == "hardware":
+                items = await self.nodeInfoRepository.fetch_distribution_hardware()
+            else:
+                raise BusinessLogicException("不支援的分布類型")
+            return AnalysisDistributionResponse(items=items)
         except BusinessLogicException as e:
             raise Exception(f"{str(e)}")
         except Exception as e:

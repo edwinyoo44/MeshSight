@@ -5,7 +5,7 @@ from configs.Database import (
 from typing import List
 from fastapi import Depends
 from models.NodeInfoModel import NodeInfo
-from schemas.pydantic.AnalysisSchema import AnalysisHardwareStatisticsItem
+from schemas.pydantic.AnalysisSchema import AnalysisDistributionItem
 from sqlalchemy import desc, select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
@@ -23,18 +23,22 @@ class NodeInfoRepository:
         self.db = db
         self.db_async = db_async
 
-    async def fetch_hardware_statistics(self) -> List[AnalysisHardwareStatisticsItem]:
+    async def fetch_distribution_firmware(self) -> List[AnalysisDistributionItem]:
         query = await self.db_async.execute(
-            select(NodeInfo.hw_model, func.count(NodeInfo.hw_model).label("count"))
-            .group_by(NodeInfo.hw_model)
+            select(
+                func.coalesce(NodeInfo.firmware_version, "Unknown").label(
+                    "firmware_version"
+                ),
+                func.count(func.coalesce(NodeInfo.firmware_version, "Unknown")).label(
+                    "count"
+                ),
+            )
+            .group_by("firmware_version")
             .order_by(desc("count"))
         )
-        items: List[AnalysisHardwareStatisticsItem] = []
-        for x in query:
-            items.append(
-                AnalysisHardwareStatisticsItem(
-                    hardware=x[0],
-                    count=x[1],
-                )
-            )
+        result = query.fetchall()
+        items: List[AnalysisDistributionItem] = [
+            AnalysisDistributionItem(name=x.firmware_version, count=x.count)
+            for x in result
+        ]
         return items
