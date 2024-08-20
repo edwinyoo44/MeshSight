@@ -25,6 +25,7 @@ class PostionItem(BaseModel):
     longitude: float  # 經度
     altitude: Optional[float]  # 高度
     precisionBit: Optional[int]  # 精度
+    precisionInMeters: Optional[int]  # 精度轉公尺
     satsInView: Optional[int]  # 可見衛星數
     updateAt: datetime  # 更新時間
     viaId: int  # 來源 node ID

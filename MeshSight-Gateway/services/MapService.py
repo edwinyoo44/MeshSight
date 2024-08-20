@@ -1,7 +1,7 @@
 import inspect
+import json
 import logging
-from typing import List
-import pytz
+from typing import List, Tuple
 from exceptions.BusinessLogicException import BusinessLogicException
 from datetime import datetime
 from fastapi import Depends
@@ -10,6 +10,8 @@ from schemas.pydantic.NodeSchema import InfoItem, PostionItem
 from repositories.NodeInfoRepository import NodeInfoRepository
 from repositories.NodePositionRepository import NodePositionRepository
 from utils.ConfigUtil import ConfigUtil
+from utils.MeshtasticUtil import MeshtasticUtil
+from utils.OtherUtil import OtherUtil
 
 
 class MapService:
@@ -24,14 +26,19 @@ class MapService:
         self.nodeInfoRepository = nodeInfoRepository
         self.nodePositionRepository = nodePositionRepository
 
-    async def coordinates(self, start: str, end: str) -> MapCoordinatesResponse:
+    async def coordinates(
+        self, start: str, end: str, report_node_hours: int
+    ) -> MapCoordinatesResponse:
         try:
-            try:
-                start_time = datetime.fromisoformat(start)
-                end_time = datetime.fromisoformat(end)
-            except ValueError:
-                raise BusinessLogicException("查詢日期格式錯誤")
-
+            start_time = datetime.fromisoformat(start).replace(second=0, microsecond=0)
+            end_time = datetime.fromisoformat(end).replace(second=0, microsecond=0)
+        except ValueError:
+            raise BusinessLogicException("查詢日期格式錯誤")
+        cache_name = f"MapService.coordinates/{start_time.strftime('%Y%m%d%H%M%S')}_{end_time.strftime('%Y%m%d%H%M%S')}_{report_node_hours}"
+        cache_json = OtherUtil.read_cache_json(cache_name)
+        if cache_json:
+            return MapCoordinatesResponse.parse_raw(cache_json)
+        try:
             # 取得時間區間更新的節點 ID
             node_ids = await self.nodePositionRepository.fetch_node_ids_by_time_range(
                 start_time, end_time
@@ -48,15 +55,126 @@ class MapService:
                         node_id, 3
                     )
                 )
+                # 取得節點座標最近 X 小時的被誰回報
+                report_node_id = (
+                    await self.nodePositionRepository.fetch_node_position_reporters(
+                        node_id, report_node_hours
+                    )
+                )
                 items.append(
                     MapCoordinatesItem(
                         id=node_id,
+                        idHex=f"!{MeshtasticUtil.convert_node_id_from_int_to_hex(node_id)}",
                         info=node_info,
                         positions=node_positions,
+                        reportNodeId=report_node_id,
                     )
                 )
+            # 節點連線
+            node_line: List[Tuple[int, int]] = []
+            # 節點覆蓋
+            node_coverage: List[Tuple[int, int, int]] = []
+            for node_a in items:
+                node_a_id = node_a.id
+                node_a_position = node_a.positions[0]
+                if not node_a_position:
+                    continue
+                node_a_report_ids = node_a.reportNodeId
+                if not node_a_report_ids or len(node_a_report_ids) == 0:
+                    continue
+                for node_b_id in node_a_report_ids:
+                    node_b = next((x for x in items if x.id == node_b_id), None)
+                    if not node_b:
+                        continue
+                    node_b_position = node_b.positions[0]
+                    if not node_b_position:
+                        continue
+                    # 計算 A 到 B 的距離
+                    distanceA2B = MeshtasticUtil.calculate_distance_in_meters(
+                        node_a_position.latitude,
+                        node_a_position.longitude,
+                        node_b_position.latitude,
+                        node_b_position.longitude,
+                    )
+                    # 檢查是否超過距離限制
+                    if distanceA2B > 24 * 1000:
+                        # LoRa 通常最遠到 16 km，來源 https://wikipedia.org/wiki/LoRa
+                        # 此限制用以防止使用手動定位的節點，導致使用者被誤導
+                        continue
+                    # 檢查是否沒加入過，則加入節點連線，確保較小的 ID 在前
+                    if (
+                        min(node_a_id, node_b_id),
+                        max(node_a_id, node_b_id),
+                    ) not in node_line:
+                        # 加入節點連線，確保較小的 ID 在前
+                        node_line.append(
+                            (min(node_a_id, node_b_id), max(node_a_id, node_b_id))
+                        )
 
-            return MapCoordinatesResponse(items=items)
+                    node_b_report_ids = node_b.reportNodeId
+                    if not node_b_report_ids or len(node_b_report_ids) == 0:
+                        continue
+                    for node_c_id in node_b_report_ids:
+                        node_c = next((x for x in items if x.id == node_c_id), None)
+                        if not node_c:
+                            continue
+                        node_c_position = node_c.positions[0]
+                        if not node_c_position:
+                            continue
+                        # 計算 B 到 C 的距離
+                        distanceB2C = MeshtasticUtil.calculate_distance_in_meters(
+                            node_b_position.latitude,
+                            node_b_position.longitude,
+                            node_c_position.latitude,
+                            node_c_position.longitude,
+                        )
+                        # 檢查是否超過距離限制
+                        if distanceB2C > 24 * 1000:
+                            # LoRa 通常最遠到 16 km，來源 https://wikipedia.org/wiki/LoRa
+                            # 此限制用以防止使用手動定位的節點，導致使用者被誤導
+                            continue
+                        # 檢查是否沒加入過
+                        if (
+                            min(node_b_id, node_c_id),
+                            max(node_b_id, node_c_id),
+                        ) not in node_line:
+                            # 加入節點連線，確保較小的 ID 在前
+                            node_line.append(
+                                (min(node_b_id, node_c_id), max(node_b_id, node_c_id))
+                            )
+
+                        node_c_report_ids = node_c.reportNodeId
+                        # 檢查 A 是否在 C 的回報者中，或 C 是否在 A 的回報者中
+                        if (
+                            node_a_id in node_c_report_ids
+                            or node_c_id in node_a_report_ids
+                        ):
+                            # 檢查 A 到 C 的距離
+                            distanceA2C = MeshtasticUtil.calculate_distance_in_meters(
+                                node_a_position.latitude,
+                                node_a_position.longitude,
+                                node_c_position.latitude,
+                                node_c_position.longitude,
+                            )
+                            # 檢查是否超過距離限制
+                            if distanceA2C > 24 * 1000:
+                                # LoRa 通常最遠到 16 km，來源 https://wikipedia.org/wiki/LoRa
+                                # 此限制用以防止使用手動定位的節點，導致使用者被誤導
+                                continue
+                            # 檢查是否沒加入過
+                            sorted_ids = sorted([node_a_id, node_b_id, node_c_id])
+                            if sorted_ids not in node_coverage:
+                                # 加入節點覆蓋，確保順序為小、中、大
+                                node_coverage.append(
+                                    (sorted_ids[0], sorted_ids[1], sorted_ids[2])
+                                )
+            response = MapCoordinatesResponse(
+                items=items, nodeLine=node_line, nodeCoverage=node_coverage
+            )
+            OtherUtil.write_cache_json(
+                cache_name, json.dumps(response.dict(), default=str)
+            )
+            return response
         except BusinessLogicException as e:
             raise Exception(f"{str(e)}")
         except Exception as e:

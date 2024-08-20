@@ -1,6 +1,6 @@
 from typing import Optional
 import pytz
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 from fastapi import APIRouter, Depends
 from schemas.pydantic.BaseSchema import BaseResponse
 from services.MapService import MapService
@@ -18,19 +18,18 @@ router = APIRouter(prefix="/v1/map", tags=["map"])
     response_model=BaseResponse[Optional[MapCoordinatesResponse]],
 )
 async def get_coordinates(
-    start: str = datetime.combine(date.today(), time())
-    .astimezone(config_timezone)
-    .isoformat(),
-    end: str = datetime.combine(date.today(), time(23, 59, 59))
-    .astimezone(config_timezone)
-    .isoformat(),
+    start: str = (datetime.now(config_timezone) - timedelta(hours=24)).isoformat(
+        timespec="seconds"
+    ),
+    end: str = datetime.now(config_timezone).isoformat(timespec="seconds"),
+    reportNodeHours: int = 1,
     mapService: MapService = Depends(),
 ):
     try:
         return BaseResponse(
             status="success",
             message="success",
-            data=await mapService.coordinates(start, end),
+            data=await mapService.coordinates(start, end, reportNodeHours),
         )
 
     except Exception as e:
