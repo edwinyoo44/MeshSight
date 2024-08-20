@@ -1,4 +1,7 @@
 timezone: "Asia/Taipei"
+cache:
+  path: "/tmp/meshsight-gateway"
+  ttl: 3600
 mqtt:
   host: "mqtt.meshtastic.org"
   port: 1883

@@ -1,4 +1,5 @@
 import logging
+import os
 from configs.Database import get_db_connection_async
 from datetime import datetime, timedelta, timezone
 from models.AnalysisDeviceActiveHourlyModel import AnalysisDeviceActiveHourly
@@ -72,3 +73,19 @@ class SystemSchedulerService:
                     await session.close()
         except Exception as e:
             self.logger.error(f"分析活躍裝置數量時發生錯誤: {e}")
+
+    # 清理 cache 檔案
+    async def clear_cache(self):
+        try:
+            # 取得 cache 路徑
+            cache_path = self.config["cache"]["path"]
+            # 清理 cache 檔案，只保留最近 1 天的檔案
+            for filename in os.listdir(cache_path):
+                file_path = os.path.join(cache_path, filename)
+                if os.path.isfile(file_path):
+                    file_time = os.path.getmtime(file_path)
+                    if file_time < datetime.now().timestamp() - 86400:
+                        os.remove(file_path)
+                        self.logger.info(f"已清理 cache 檔案: {filename}")
+        except Exception as e:
+            self.logger.error(f"清理 cache 檔案時發生錯誤: {e}")

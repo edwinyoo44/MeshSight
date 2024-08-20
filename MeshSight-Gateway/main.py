@@ -68,7 +68,10 @@ def start_scheduler_job():
     scheduler_async = AsyncIOScheduler()
     scheduler_async.add_job(
         SystemSchedulerService().analyze_active_device, CronTrigger(minute=0)
-    )
+    )  # 每小時整點執行，分析活躍裝置
+    scheduler_async.add_job(
+        SystemSchedulerService().clear_cache, CronTrigger(hour=0, minute=30)
+    ) # 每天 00:30 執行，清除 cache
     scheduler_async.start()
 
 
