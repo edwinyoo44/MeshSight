@@ -67,44 +67,52 @@ class NodePositionRepository:
             result = query.fetchall()
             if not result:
                 return []
-            items: List[PostionItem] = [
-                PostionItem(
-                    nodeId=x.node_id,
-                    latitude=x.latitude,
-                    longitude=x.longitude,
-                    altitude=x.altitude,
-                    precisionBit=x.precision_bits,
-                    precisionInMeters=MeshtasticUtil.convert_precision_to_meter(
-                        x.precision_bits
-                    ),
-                    satsInView=x.sats_in_view,
-                    updateAt=x.update_at.astimezone(
-                        pytz.timezone(self.config["timezone"])
-                    ).isoformat(),
-                    viaId=(
-                        x.node_id
-                        if x.topic.split("/")[-1] == ""
-                        else MeshtasticUtil.convert_node_id_from_hex_to_int(
-                            x.topic.split("/")[-1]
-                        )
-                    ),
-                    viaIdHex=(
-                        f"!{MeshtasticUtil.convert_node_id_from_int_to_hex(x.node_id)}"
-                        if x.topic.split("/")[-1] == ""
-                        else x.topic.split("/")[-1]
-                    ),
-                    channel=(
-                        f"{x.topic.split('/')[-2]}(MapReport)"
-                        if x.topic.split("/")[-2] == "map"
-                        else (
-                            f"{x.topic.split('/')[-2]}(json)"
-                            if x.topic.split("/")[-3] == "json"
-                            else x.topic.split("/")[-2]
-                        )
-                    ),
-                )
-                for x in result
-            ]
+
+            items: List[PostionItem] = []
+            for x in result:
+                try:
+                    item = PostionItem(
+                        nodeId=x.node_id,
+                        latitude=x.latitude,
+                        longitude=x.longitude,
+                        altitude=x.altitude,
+                        precisionBit=x.precision_bits,
+                        precisionInMeters=MeshtasticUtil.convert_precision_to_meter(
+                            x.precision_bits
+                        ),
+                        satsInView=x.sats_in_view,
+                        updateAt=x.update_at.astimezone(
+                            pytz.timezone(self.config["timezone"])
+                        ).isoformat(),
+                        viaId=(
+                            x.node_id
+                            if x.topic.split("/")[-1] == ""
+                            else MeshtasticUtil.convert_node_id_from_hex_to_int(
+                                x.topic.split("/")[-1]
+                            )
+                        ),
+                        viaIdHex=(
+                            f"!{MeshtasticUtil.convert_node_id_from_int_to_hex(x.node_id)}"
+                            if x.topic.split("/")[-1] == ""
+                            else x.topic.split("/")[-1]
+                        ),
+                        channel=(
+                            f"{x.topic.split('/')[-2]}(MapReport)"
+                            if x.topic.split("/")[-2] == "map"
+                            else (
+                                f"{x.topic.split('/')[-2]}(json)"
+                                if x.topic.split("/")[-3] == "json"
+                                else x.topic.split("/")[-2]
+                            )
+                        ),
+                        rootTopic=f"{x.topic.split('/')[0]}/{x.topic.split('/')[1]}",
+                    )
+                    items.append(item)
+                except Exception as e:
+                    self.logger.error(
+                        f"{inspect.currentframe().f_code.co_name}: {str(e)}"
+                    )
+                    continue
             return items
         except Exception as e:
             raise Exception(f"{inspect.currentframe().f_code.co_name}: {str(e)}")
@@ -117,7 +125,9 @@ class NodePositionRepository:
             subquery = aliased(
                 select(NodePosition)
                 .where(NodePosition.node_id == node_id)
-                .where(NodePosition.update_at >= datetime.now() - timedelta(hours=hours))
+                .where(
+                    NodePosition.update_at >= datetime.now() - timedelta(hours=hours)
+                )
                 .distinct(NodePosition.topic)
                 .subquery()
             )

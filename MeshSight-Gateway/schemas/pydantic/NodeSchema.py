@@ -17,6 +17,7 @@ class InfoItem(BaseModel):
     numOnlineLocalNodes: int  # 本地節點數
     updateAt: datetime  # 更新時間
     channel: str  # 頻道
+    rootTopic: str  # 根主題
 
 
 class PostionItem(BaseModel):
@@ -31,3 +32,4 @@ class PostionItem(BaseModel):
     viaId: int  # 來源 node ID
     viaIdHex: str  # 來源 node ID HEX
     channel: str  # 頻道
+    rootTopic: str  # 根主題

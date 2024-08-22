@@ -47,29 +47,33 @@ class MapService:
             # 取得節點座標資料
             items: List[MapCoordinatesItem] = []
             for node_id in node_ids:
-                node_info: InfoItem = (
-                    await self.nodeInfoRepository.fetch_node_info_by_node_id(node_id)
-                )
-                node_positions: List[PostionItem] = (
-                    await self.nodePositionRepository.fetch_node_position_by_node_id(
-                        node_id, 3
+                try:
+                    node_info: InfoItem = (
+                        await self.nodeInfoRepository.fetch_node_info_by_node_id(node_id)
                     )
-                )
-                # 取得節點座標最近 X 小時的被誰回報
-                report_node_id = (
-                    await self.nodePositionRepository.fetch_node_position_reporters(
-                        node_id, report_node_hours
+                    node_positions: List[PostionItem] = (
+                        await self.nodePositionRepository.fetch_node_position_by_node_id(
+                            node_id, 3
+                        )
                     )
-                )
-                items.append(
-                    MapCoordinatesItem(
-                        id=node_id,
-                        idHex=f"!{MeshtasticUtil.convert_node_id_from_int_to_hex(node_id)}",
-                        info=node_info,
-                        positions=node_positions,
-                        reportNodeId=report_node_id,
+                    # 取得節點座標最近 X 小時的被誰回報
+                    report_node_id = (
+                        await self.nodePositionRepository.fetch_node_position_reporters(
+                            node_id, report_node_hours
+                        )
                     )
-                )
+                    items.append(
+                        MapCoordinatesItem(
+                            id=node_id,
+                            idHex=f"!{MeshtasticUtil.convert_node_id_from_int_to_hex(node_id)}",
+                            info=node_info,
+                            positions=node_positions,
+                            reportNodeId=report_node_id,
+                        )
+                    )
+                except Exception as e:
+                    self.logger.error(f"{inspect.currentframe().f_code.co_name}: {str(e)}")
+                    continue
             # 節點連線
             node_line: List[Tuple[int, int]] = []
             # 節點覆蓋

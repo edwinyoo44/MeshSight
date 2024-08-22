@@ -112,6 +112,7 @@ class NodeInfoRepository:
                         else result.topic.split("/")[-2]
                     )
                 ),
+                rootTopic=f"{result.topic.split('/')[0]}/{result.topic.split('/')[1]}",
             )
 
         except Exception as e:
