@@ -17,7 +17,8 @@ meshtastic:
     - name: "LongFast"
       key: "1PG7OiApB1nwvP+rz05pAQ==" # aka AQ==
   position:
-    maxQueryPeriod: 7 # 最大查詢期限，單位為天
+    expire: 9 # 定位資料保留天數，單位為天
+    maxQueryPeriod: 8 # 最大查詢期限，單位為天
 
 postgres:
   host: "MeshSight-Gateway-PostgreSQL"

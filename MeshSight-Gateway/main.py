@@ -71,7 +71,10 @@ def start_scheduler_job():
     )  # 每小時整點執行，分析活躍裝置
     scheduler_async.add_job(
         SystemSchedulerService().clear_cache, CronTrigger(hour=0, minute=30)
-    ) # 每天 00:30 執行，清除 cache
+    )  # 每天 00:30 執行，清除 cache
+    scheduler_async.add_job(
+        SystemSchedulerService().clear_node_position, CronTrigger(hour=3, minute=30)
+    )  # 每天 03:30 執行，清除過期的 node position
     scheduler_async.start()
 
 

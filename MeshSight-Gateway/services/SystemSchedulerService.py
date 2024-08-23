@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from models.AnalysisDeviceActiveHourlyModel import AnalysisDeviceActiveHourly
 from models.NodeModel import Node
 from models.NodeInfoModel import NodeInfo
+from models.NodePositionModel import NodePosition
 from sqlalchemy.future import select
 from sqlalchemy.orm import aliased
 from utils.ConfigUtil import ConfigUtil
@@ -89,3 +90,29 @@ class SystemSchedulerService:
                         self.logger.info(f"已清理 cache 檔案: {filename}")
         except Exception as e:
             self.logger.error(f"清理 cache 檔案時發生錯誤: {e}")
+
+    # 清理超過期限的 node_position 資料
+    async def clear_node_position(self):
+        try:
+            # 取得 node_position 資料的過期時間
+            node_position_expire = self.config["meshtastic"]["position"]["expire"]
+            expire_time = datetime.now() - timedelta(days=node_position_expire)
+            
+            async for session in get_db_connection_async():
+                try:
+                    # 刪除過期的 node_position 資料
+                    result = await session.execute(
+                        select(NodePosition).filter(NodePosition.created_at < expire_time)
+                    )
+                    rows = result.all()
+                    for row in rows:
+                        session.delete(row)
+                    await session.commit()
+                    self.logger.info(f"已清理 {len(rows)} 筆 node_position 資料")
+                except Exception as inner_e:
+                    self.logger.error(f"處理資料庫操作時發生錯誤: {inner_e}")
+                    await session.rollback()
+                finally:
+                    await session.close()
+        except Exception as e:
+            self.logger.error(f"清理 node_position 資料時發生錯誤: {e}")
