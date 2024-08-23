@@ -1,5 +1,5 @@
 import inspect
-
+import logging
 import pytz
 from configs.Database import (
     get_db_connection,
@@ -28,6 +28,7 @@ class NodeInfoRepository:
         self.config = ConfigUtil.read_config()
         self.db = db
         self.db_async = db_async
+        self.logger = logging.getLogger(__name__)
 
     async def fetch_distribution_firmware(self) -> List[AnalysisDistributionItem]:
         query = await self.db_async.execute(

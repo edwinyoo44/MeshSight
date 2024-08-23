@@ -1,3 +1,4 @@
+import logging
 from configs.Database import (
     get_db_connection,
     get_db_connection_async,
@@ -22,6 +23,7 @@ class AnalysisDeviceActiveHourlyRepository:
     ) -> None:
         self.db = db
         self.db_async = db_async
+        self.logger = logging.getLogger(__name__)
 
     def fetch_active_hourly_records(
         self,

@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 import inspect
-import json
-
+import logging
 import pytz
 from configs.Database import (
     get_db_connection,
@@ -30,6 +29,7 @@ class NodePositionRepository:
         self.config = ConfigUtil.read_config()
         self.db = db
         self.db_async = db_async
+        self.logger = logging.getLogger(__name__)
 
     # 取得時間區間更新的節點 ID
     async def fetch_node_ids_by_time_range(
@@ -38,7 +38,15 @@ class NodePositionRepository:
         try:
             query = await self.db_async.execute(
                 select(NodePosition.node_id)
-                .where(NodePosition.update_at >= datetime.now() - timedelta(days=int(self.config["meshtastic"]["position"]["maxQueryPeriod"]))) # 限制最大查詢天數
+                .where(
+                    NodePosition.update_at
+                    >= datetime.now()
+                    - timedelta(
+                        days=int(
+                            self.config["meshtastic"]["position"]["maxQueryPeriod"]
+                        )
+                    )
+                )  # 限制最大查詢天數
                 .where(NodePosition.update_at >= start)
                 .where(NodePosition.update_at <= end)
                 .distinct(NodePosition.node_id)
@@ -55,7 +63,15 @@ class NodePositionRepository:
         try:
             subquery = aliased(
                 select(NodePosition)
-                .where(NodePosition.update_at >= datetime.now() - timedelta(days=int(self.config["meshtastic"]["position"]["maxQueryPeriod"]))) # 限制最大查詢天數
+                .where(
+                    NodePosition.update_at
+                    >= datetime.now()
+                    - timedelta(
+                        days=int(
+                            self.config["meshtastic"]["position"]["maxQueryPeriod"]
+                        )
+                    )
+                )  # 限制最大查詢天數
                 .where(NodePosition.node_id == node_id)
                 .order_by(NodePosition.topic, desc(NodePosition.update_at))
                 .distinct(NodePosition.topic)
@@ -126,7 +142,15 @@ class NodePositionRepository:
         try:
             subquery = aliased(
                 select(NodePosition)
-                .where(NodePosition.update_at >= datetime.now() - timedelta(days=int(self.config["meshtastic"]["position"]["maxQueryPeriod"]))) # 限制最大查詢天數
+                .where(
+                    NodePosition.update_at
+                    >= datetime.now()
+                    - timedelta(
+                        days=int(
+                            self.config["meshtastic"]["position"]["maxQueryPeriod"]
+                        )
+                    )
+                )  # 限制最大查詢天數
                 .where(NodePosition.node_id == node_id)
                 .where(
                     NodePosition.update_at >= datetime.now() - timedelta(hours=hours)
