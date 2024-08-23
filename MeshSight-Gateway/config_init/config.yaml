@@ -1,7 +1,9 @@
 timezone: "Asia/Taipei"
+
 cache:
   path: "/tmp/meshsight-gateway"
   ttl: 3600
+
 mqtt:
   host: "mqtt.meshtastic.org"
   port: 1883
@@ -9,10 +11,14 @@ mqtt:
   username: "meshdev"
   password: "large4cats"
   topics: ["msh/TW/#", "msh/TW/#"]
+
 meshtastic:
   channels:
     - name: "LongFast"
       key: "1PG7OiApB1nwvP+rz05pAQ==" # aka AQ==
+  position:
+    maxQueryPeriod: 7 # 最大查詢期限，單位為天
+
 postgres:
   host: "MeshSight-Gateway-PostgreSQL"
   port: "5432"
