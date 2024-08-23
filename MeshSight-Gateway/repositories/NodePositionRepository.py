@@ -42,7 +42,7 @@ class NodePositionRepository:
                     NodePosition.update_at
                     >= datetime.now()
                     - timedelta(
-                        days=int(
+                        hours=int(
                             self.config["meshtastic"]["position"]["maxQueryPeriod"]
                         )
                     )
@@ -67,7 +67,7 @@ class NodePositionRepository:
                     NodePosition.update_at
                     >= datetime.now()
                     - timedelta(
-                        days=int(
+                        hours=int(
                             self.config["meshtastic"]["position"]["maxQueryPeriod"]
                         )
                     )
@@ -146,7 +146,7 @@ class NodePositionRepository:
                     NodePosition.update_at
                     >= datetime.now()
                     - timedelta(
-                        days=int(
+                        hours=int(
                             self.config["meshtastic"]["position"]["maxQueryPeriod"]
                         )
                     )

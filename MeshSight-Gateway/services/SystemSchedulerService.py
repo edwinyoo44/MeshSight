@@ -96,7 +96,7 @@ class SystemSchedulerService:
         try:
             # 取得 node_position 資料的過期時間
             node_position_expire = self.config["meshtastic"]["position"]["expire"]
-            expire_time = datetime.now() - timedelta(days=node_position_expire)
+            expire_time = datetime.now() - timedelta(hours=node_position_expire)
             
             async for session in get_db_connection_async():
                 try:
