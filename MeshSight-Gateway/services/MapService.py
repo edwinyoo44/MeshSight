@@ -58,6 +58,8 @@ class MapService:
                             node_id, 3
                         )
                     )
+                    if node_positions is None or len(node_positions) == 0:
+                        continue
                     # 取得節點座標最近 X 小時的被誰回報
                     report_node_id = (
                         await self.nodePositionRepository.fetch_node_position_reporters(
