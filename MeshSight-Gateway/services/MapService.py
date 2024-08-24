@@ -49,7 +49,9 @@ class MapService:
             for node_id in node_ids:
                 try:
                     node_info: InfoItem = (
-                        await self.nodeInfoRepository.fetch_node_info_by_node_id(node_id)
+                        await self.nodeInfoRepository.fetch_node_info_by_node_id(
+                            node_id
+                        )
                     )
                     node_positions: List[PostionItem] = (
                         await self.nodePositionRepository.fetch_node_position_by_node_id(
@@ -72,7 +74,9 @@ class MapService:
                         )
                     )
                 except Exception as e:
-                    self.logger.error(f"{inspect.currentframe().f_code.co_name}: {str(e)}")
+                    self.logger.error(
+                        f"{inspect.currentframe().f_code.co_name}: {str(e)}"
+                    )
                     continue
             # 節點連線
             node_line: List[Tuple[int, int]] = []
@@ -80,15 +84,20 @@ class MapService:
             node_coverage: List[Tuple[int, int, int]] = []
             for node_a in items:
                 node_a_id = node_a.id
+
+                if not node_a.positions or len(node_a.positions) == 0:
+                    continue
                 node_a_position = node_a.positions[0]
-                if not node_a_position:
+
+                if not node_a.reportNodeId or len(node_a.reportNodeId) == 0:
                     continue
                 node_a_report_ids = node_a.reportNodeId
-                if not node_a_report_ids or len(node_a_report_ids) == 0:
-                    continue
+
                 for node_b_id in node_a_report_ids:
                     node_b = next((x for x in items if x.id == node_b_id), None)
                     if not node_b:
+                        continue
+                    if not node_b.positions or len(node_b.positions) == 0:
                         continue
                     node_b_position = node_b.positions[0]
                     if not node_b_position:
@@ -121,6 +130,8 @@ class MapService:
                     for node_c_id in node_b_report_ids:
                         node_c = next((x for x in items if x.id == node_c_id), None)
                         if not node_c:
+                            continue
+                        if not node_c.positions or len(node_c.positions) == 0:
                             continue
                         node_c_position = node_c.positions[0]
                         if not node_c_position:

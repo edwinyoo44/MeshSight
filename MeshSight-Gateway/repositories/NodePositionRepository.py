@@ -89,6 +89,16 @@ class NodePositionRepository:
             items: List[PostionItem] = []
             for x in result:
                 try:
+                    try:
+                        viaIdHex = (
+                            f"!{MeshtasticUtil.convert_node_id_from_int_to_hex(x.node_id)}"
+                            if x.topic.split("/")[-1] == ""
+                            else x.topic.split("/")[-1]
+                        )
+                        viaId = MeshtasticUtil.convert_node_id_from_hex_to_int(viaIdHex)
+                    except Exception as e:
+                        raise ValueError(f"Invalid topic: {x.topic}")
+
                     item = PostionItem(
                         nodeId=x.node_id,
                         latitude=x.latitude,
@@ -102,32 +112,14 @@ class NodePositionRepository:
                         updateAt=x.update_at.astimezone(
                             pytz.timezone(self.config["timezone"])
                         ).isoformat(),
-                        viaId=(
-                            x.node_id
-                            if x.topic.split("/")[-1] == ""
-                            else MeshtasticUtil.convert_node_id_from_hex_to_int(
-                                x.topic.split("/")[-1]
-                            )
-                        ),
-                        viaIdHex=(
-                            f"!{MeshtasticUtil.convert_node_id_from_int_to_hex(x.node_id)}"
-                            if x.topic.split("/")[-1] == ""
-                            else x.topic.split("/")[-1]
-                        ),
-                        channel=(
-                            f"{x.topic.split('/')[-2]}(MapReport)"
-                            if x.topic.split("/")[-2] == "map"
-                            else (
-                                f"{x.topic.split('/')[-2]}(json)"
-                                if x.topic.split("/")[-3] == "json"
-                                else x.topic.split("/")[-2]
-                            )
-                        ),
-                        rootTopic=f"{x.topic.split('/')[0]}/{x.topic.split('/')[1]}",
+                        viaId=viaId,
+                        viaIdHex=viaIdHex,
+                        channel=MeshtasticUtil.get_channel_from_topic(x.topic),
+                        rootTopic=MeshtasticUtil.get_root_topic_from_topic(x.topic),
                     )
                     items.append(item)
                 except Exception as e:
-                    self.logger.error(
+                    self.logger.debug(
                         f"{inspect.currentframe().f_code.co_name}: {str(e)}"
                     )
                     continue
@@ -163,18 +155,21 @@ class NodePositionRepository:
             result = query.fetchall()
             if not result:
                 return []
-            items: List[int] = list(
-                set(
-                    MeshtasticUtil.convert_node_id_from_hex_to_int(
-                        x.topic.split("/")[-1]
-                    )
-                    for x in result
-                    if x.topic and "/" in x.topic and x.topic.split("/")[-1] != ""
-                )
-            )
-            # 移除自己
-            if node_id in items:
-                items.remove(node_id)
+
+            items: List[int] = []
+            for x in result:
+                if x.topic and "/" in x.topic and x.topic.split("/")[-1] != "":
+                    try:
+                        node_id = MeshtasticUtil.convert_node_id_from_hex_to_int(
+                            x.topic.split("/")[-1]
+                        )
+                    except Exception as e:
+                        self.logger.debug(
+                            f"{inspect.currentframe().f_code.co_name}: {str(e)}"
+                        )
+                        continue
+                    if node_id not in items:
+                        items.append(node_id)
             return items
         except Exception as e:
             raise Exception(f"{inspect.currentframe().f_code.co_name}: {str(e)}")

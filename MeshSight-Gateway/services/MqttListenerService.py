@@ -88,8 +88,10 @@ class MqttListenerService:
                     node_info.id = payload.get("id")
                     # node_info.long_name = payload.get("longname", None) # 解析 emoji 會有問題
                     # node_info.short_name = payload.get("shortname", None) # 解析 emoji 會有問題
-                    node_info.hw_model = payload.get("hardware", None)
-                    node_info.role = payload.get("role", None)
+                    if payload.get("hardware", None) is not None:
+                        node_info.hw_model = payload.get("hardware")
+                    if payload.get("role", None) is not None:
+                        node_info.role = payload.get("role")
                     data = json.loads(
                         MessageToJson(
                             node_info,

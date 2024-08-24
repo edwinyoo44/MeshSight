@@ -40,7 +40,9 @@ class MeshtasticUtil:
         return precision_mapping.get(precision, -1)  # -1 表示未知的精確度值
 
     # 計算兩點之間的距離
-    def calculate_distance_in_meters(lat1: float, lon1: float, lat2: float, lon2: float):
+    def calculate_distance_in_meters(
+        lat1: float, lon1: float, lat2: float, lon2: float
+    ):
         # 將緯度和經度從度數轉換為弧度
         lat1_rad = math.radians(lat1)
         lon1_rad = math.radians(lon1)
@@ -61,3 +63,25 @@ class MeshtasticUtil:
 
         distance_m = distance_km * 1000  # 將距離轉換為公尺
         return distance_m
+
+    def get_root_topic_from_topic(topic):
+        # 尋找 /2/ 的位置
+        index = topic.find("/2/")
+        if index != -1:
+            # 取前面的字串
+            root_topic = topic[:index]
+        else:
+            # 如果找不到 /2/，則返回原始 topic
+            root_topic = topic
+        return root_topic
+
+    def get_channel_from_topic(topic):
+        return (
+            f"{topic.split('/')[-2]}(MapReport)"
+            if topic.split("/")[-2] == "map"
+            else (
+                f"{topic.split('/')[-2]}(json)"
+                if topic.split("/")[-3] == "json"
+                else topic.split("/")[-2]
+            )
+        )
