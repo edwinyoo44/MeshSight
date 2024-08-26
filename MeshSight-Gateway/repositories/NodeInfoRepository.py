@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import inspect
 import logging
 import pytz
@@ -40,6 +41,7 @@ class NodeInfoRepository:
                     "count"
                 ),
             )
+            .where(NodeInfo.update_at >= datetime.now() - timedelta(days=1))
             .group_by("firmware_version")
             .order_by(desc("count"))
         )
@@ -56,6 +58,7 @@ class NodeInfoRepository:
                 func.coalesce(NodeInfo.hw_model, "Unknown").label("hw_model"),
                 func.count(func.coalesce(NodeInfo.hw_model, "Unknown")).label("count"),
             )
+            .where(NodeInfo.update_at >= datetime.now() - timedelta(days=1))
             .group_by("hw_model")
             .order_by(desc("count"))
         )
@@ -71,6 +74,7 @@ class NodeInfoRepository:
                 func.coalesce(NodeInfo.role, "Unknown").label("role"),
                 func.count(func.coalesce(NodeInfo.role, "Unknown")).label("count"),
             )
+            .where(NodeInfo.update_at >= datetime.now() - timedelta(days=1))
             .group_by("role")
             .order_by(desc("count"))
         )
