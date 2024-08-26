@@ -55,7 +55,7 @@ class MapService:
                     )
                     node_positions: List[PostionItem] = (
                         await self.nodePositionRepository.fetch_node_position_by_node_id(
-                            node_id, 3
+                            node_id, 5
                         )
                     )
                     if node_positions is None or len(node_positions) == 0:
