@@ -327,6 +327,12 @@ class MqttListenerService:
                 if latitude == 0 and longitude == 0:
                     return
 
+                # 如果時間來自未來，則跳過
+                if datetime.fromtimestamp(
+                    message_json.get("timestamp"), tz=timezone.utc
+                ) > datetime.now(timezone.utc):
+                    return
+
                 node_position = await self.create_or_update_node_position(
                     NodePosition(
                         node_id=message_json.get("from"),
@@ -441,6 +447,12 @@ class MqttListenerService:
 
             # 如果在 0 度線上，則跳過
             if latitude == 0 and longitude == 0:
+                return
+
+            # 如果時間來自未來，則跳過
+            if datetime.fromtimestamp(
+                message_json.get("timestamp"), tz=timezone.utc
+            ) > datetime.now(timezone.utc):
                 return
 
             # 新增 NodePosition
