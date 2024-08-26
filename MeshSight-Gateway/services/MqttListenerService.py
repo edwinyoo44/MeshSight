@@ -697,6 +697,9 @@ class MqttListenerService:
     async def create_or_update_node_info(self, node_info: NodeInfo) -> NodeInfo:
         async for session in get_db_connection_async():
             try:
+                # 一些傳入資料型態的檢查
+                if not isinstance(node_info.role, str):
+                    node_info.role = None
                 # 檢查 Node 是否存在
                 if not await self.check_node_exist(node_info.node_id):
                     await self.create_node(
