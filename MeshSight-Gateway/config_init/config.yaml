@@ -1,4 +1,4 @@
-timezone: "Asia/Taipei"
+timezone: "UTC"
 
 cache:
   path: "/tmp/meshsight-gateway"
@@ -9,7 +9,8 @@ meshtastic:
     - name: "LongFast"
       key: "1PG7OiApB1nwvP+rz05pAQ==" # aka AQ==
   position:
-    expire: 40 # 定位資料保留天數，單位為 hour
+    expire: 40 # 定位資料保留期限，單位為 hour
+    maxPrecisionBits: 19 # 最大精度位元數
     maxQueryPeriod: 36 # 最大查詢期限，單位為 hour
 
 postgres:
