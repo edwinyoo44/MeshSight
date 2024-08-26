@@ -1,6 +1,7 @@
 import base64
 from datetime import datetime, timezone
 import json
+import math
 import numbers
 import aiomqtt
 import asyncio
@@ -70,7 +71,10 @@ class MqttListenerService:
             # 處理訊息邏輯
             topic: str = message.topic.value
             # 排除含以下內容的 topic
-            if "/2/stat/" in topic:
+            if "#" in topic:
+                self.logger.error(f"Ignoring invalid topic with #: {topic}")
+                return
+            elif "/2/stat/" in topic:
                 # Meshtastic Firmware 2.4.1.394e0e1 開始棄用
                 return
 
@@ -310,6 +314,19 @@ class MqttListenerService:
                 latitude = payload.get("latitude_i") / 1e7
                 longitude = payload.get("longitude_i") / 1e7
 
+                # 如果經緯度不合法，則跳過
+                if not (
+                    isinstance(latitude, numbers.Number)
+                    and isinstance(longitude, numbers.Number)
+                    and -90 <= latitude <= 90
+                    and -180 <= longitude <= 180
+                ):
+                    return
+
+                # 如果在 0 度線上，則跳過
+                if latitude == 0 and longitude == 0:
+                    return
+
                 node_position = await self.create_or_update_node_position(
                     NodePosition(
                         node_id=message_json.get("from"),
@@ -413,6 +430,19 @@ class MqttListenerService:
             latitude = payload.get("latitude_i") / 1e7
             longitude = payload.get("longitude_i") / 1e7
 
+            # 如果經緯度不合法，則跳過
+            if not (
+                isinstance(latitude, numbers.Number)
+                and isinstance(longitude, numbers.Number)
+                and -90 <= latitude <= 90
+                and -180 <= longitude <= 180
+            ):
+                return
+
+            # 如果在 0 度線上，則跳過
+            if latitude == 0 and longitude == 0:
+                return
+
             # 新增 NodePosition
             node_position = await self.create_or_update_node_position(
                 NodePosition(
@@ -450,41 +480,41 @@ class MqttListenerService:
                     await self.create_or_update_node_telemetry_air_quality(
                         NodeTelemetryAirQuality(
                             node_id=message_json.get("from"),
-                            pm10_standard=air_quality_metrics.get(
-                                "pm10_standard", None
+                            pm10_standard=self.get_telemetry_value_or_none(
+                                air_quality_metrics, "pm10_standard"
                             ),
-                            pm25_standard=air_quality_metrics.get(
-                                "pm25_standard", None
+                            pm25_standard=self.get_telemetry_value_or_none(
+                                air_quality_metrics, "pm25_standard"
                             ),
-                            pm100_standard=air_quality_metrics.get(
-                                "pm100_standard", None
+                            pm100_standard=self.get_telemetry_value_or_none(
+                                air_quality_metrics, "pm100_standard"
                             ),
-                            pm10_environmental=air_quality_metrics.get(
-                                "pm10_environmental", None
+                            pm10_environmental=self.get_telemetry_value_or_none(
+                                air_quality_metrics, "pm10_environmental"
                             ),
-                            pm25_environmental=air_quality_metrics.get(
-                                "pm25_environmental", None
+                            pm25_environmental=self.get_telemetry_value_or_none(
+                                air_quality_metrics, "pm25_environmental"
                             ),
-                            pm100_environmental=air_quality_metrics.get(
-                                "pm100_environmental", None
+                            pm100_environmental=self.get_telemetry_value_or_none(
+                                air_quality_metrics, "pm100_environmental"
                             ),
-                            particles_03um=air_quality_metrics.get(
-                                "particles_03um", None
+                            particles_03um=self.get_telemetry_value_or_none(
+                                air_quality_metrics, "particles_03um"
                             ),
-                            particles_05um=air_quality_metrics.get(
-                                "particles_05um", None
+                            particles_05um=self.get_telemetry_value_or_none(
+                                air_quality_metrics, "particles_05um"
                             ),
-                            particles_10um=air_quality_metrics.get(
-                                "particles_10um", None
+                            particles_10um=self.get_telemetry_value_or_none(
+                                air_quality_metrics, "particles_10um"
                             ),
-                            particles_25um=air_quality_metrics.get(
-                                "particles_25um", None
+                            particles_25um=self.get_telemetry_value_or_none(
+                                air_quality_metrics, "particles_25um"
                             ),
-                            particles_50um=air_quality_metrics.get(
-                                "particles_50um", None
+                            particles_50um=self.get_telemetry_value_or_none(
+                                air_quality_metrics, "particles_50um"
                             ),
-                            particles_100um=air_quality_metrics.get(
-                                "particles_100um", None
+                            particles_100um=self.get_telemetry_value_or_none(
+                                air_quality_metrics, "particles_100um"
                             ),
                             create_at=datetime.fromtimestamp(
                                 payload.get("time"), tz=timezone.utc
@@ -531,13 +561,11 @@ class MqttListenerService:
                     await self.create_or_update_node_telemetry_environment(
                         NodeTelemetryEnvironment(
                             node_id=message_json.get("from"),
-                            temperature=environment_metrics.get("temperature", None),
-                            relative_humidity=(
-                                payload.get("relative_humidity", None)
-                                if isinstance(
-                                    payload.get("relative_humidity"), numbers.Number
-                                )
-                                else None
+                            temperature=self.get_telemetry_value_or_none(
+                                environment_metrics, "temperature"
+                            ),
+                            relative_humidity=self.get_telemetry_value_or_none(
+                                environment_metrics, "relative_humidity"
                             ),
                             barometric_pressure=environment_metrics.get(
                                 "barometric_pressure", None
@@ -549,7 +577,9 @@ class MqttListenerService:
                             current=environment_metrics.get("current", None),
                             iaq=environment_metrics.get("iaq", None),
                             distance=environment_metrics.get("distance", None),
-                            lux=environment_metrics.get("lux", None),
+                            lux=self.get_telemetry_value_or_none(
+                                environment_metrics, "lux"
+                            ),
                             white_lux=environment_metrics.get("white_lux", None),
                             ir_lux=environment_metrics.get("ir_lux", None),
                             uv_lux=environment_metrics.get("uv_lux", None),
@@ -1337,3 +1367,14 @@ class MqttListenerService:
                 raise e
             finally:
                 await session.close()
+
+    # 取得資料
+    def get_telemetry_value_or_none(self, metrics, key):
+        value = metrics.get(key, None)
+        if value == "NaN" or (
+            isinstance(value, float)
+            and math.isnan(value)
+            and isinstance(value, numbers.Number)
+        ):
+            return None
+        return value
