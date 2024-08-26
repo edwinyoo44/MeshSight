@@ -10,7 +10,29 @@ mqtt:
   identifier: "MeshSight-Gateway"
   username: "meshdev"
   password: "large4cats"
-  topics: ["msh/TW/#", "msh/TW/#"]
+  topics: [
+      # https://meshtastic.org/docs/configuration/radio/lora/#region
+      "msh/US/#",
+      "msh/EU_433/#",
+      "msh/EU_868/#",
+      "msh/CN/#",
+      "msh/JP/#",
+      "msh/ANZ/#",
+      "msh/KR/#",
+      "msh/TW/#",
+      "msh/RU/#",
+      "msh/IN/#",
+      "msh/NZ_865/#",
+      "msh/TH/#",
+      "msh/UA_433/#",
+      "msh/UA_868/#",
+      "msh/MY_433/#",
+      "msh/MY_919/#",
+      "msh/SG_923/#",
+      "msh/LORA_24/#",
+      # custom
+      "msh/custom/#"
+    ]
 
 meshtastic:
   channels:
