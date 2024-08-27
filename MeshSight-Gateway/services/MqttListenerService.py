@@ -592,9 +592,15 @@ class MqttListenerService:
                             lux=self.get_telemetry_value_or_none(
                                 environment_metrics, "lux"
                             ),
-                            white_lux=environment_metrics.get("white_lux", None),
-                            ir_lux=environment_metrics.get("ir_lux", None),
-                            uv_lux=environment_metrics.get("uv_lux", None),
+                            white_lux=self.get_telemetry_value_or_none(
+                                environment_metrics, "white_lux"
+                            ),
+                            ir_lux=self.get_telemetry_value_or_none(
+                                environment_metrics, "ir_lux"
+                            ),
+                            uv_lux=self.get_telemetry_value_or_none(
+                                environment_metrics, "uv_lux"
+                            ),
                             wind_direction=environment_metrics.get(
                                 "wind_direction", None
                             ),
