@@ -297,5 +297,9 @@ mqtt:
       "msh/ZM/#", # Zambia
       "msh/ZW/#", # Zimbabwe
       # custom
-      "msh/custom/#",
+      "msh/+/2/#",
+      "msh/+/+/2/#",
+      "msh/+/+/+/2/#",
+      "msh/+/+/+/+/2/#",
+      "msh/+/+/+/+/+/2/#",
     ]
