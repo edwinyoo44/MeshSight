@@ -7,6 +7,7 @@ from models.NodeModel import Node
 from models.NodeInfoModel import NodeInfo
 from models.NodeNeighborInfoModel import NodeNeighborInfo
 from models.NodePositionModel import NodePosition
+from sqlalchemy import delete
 from sqlalchemy.future import select
 from sqlalchemy.orm import aliased
 from utils.ConfigUtil import ConfigUtil
@@ -102,14 +103,10 @@ class SystemSchedulerService:
             async for session in get_db_connection_async():
                 try:
                     # 刪除過期的 node_neighbor_info 資料
-                    result = await session.execute(
-                        select(NodeNeighborInfo).filter(NodeNeighborInfo.update_at < expire_time)
-                    )
-                    rows = result.all()
-                    for row in rows:
-                        session.delete(row)
+                    delete_stmt = delete(NodeNeighborInfo).where(NodeNeighborInfo.update_at < expire_time)
+                    result = await session.execute(delete_stmt)
                     await session.commit()
-                    self.logger.debug(f"已清理 {len(rows)} 筆 node_neighbor_info 資料")
+                    self.logger.debug(f"已清理 {result.rowcount} 筆 node_neighbor_info 資料")
                 except Exception as inner_e:
                     self.logger.error(f"處理資料庫操作時發生錯誤: {inner_e}")
                     await session.rollback()
@@ -128,14 +125,10 @@ class SystemSchedulerService:
             async for session in get_db_connection_async():
                 try:
                     # 刪除過期的 node_position 資料
-                    result = await session.execute(
-                        select(NodePosition).filter(NodePosition.update_at < expire_time)
-                    )
-                    rows = result.all()
-                    for row in rows:
-                        session.delete(row)
+                    delete_stmt = delete(NodePosition).where(NodePosition.update_at < expire_time)
+                    result = await session.execute(delete_stmt)
                     await session.commit()
-                    self.logger.debug(f"已清理 {len(rows)} 筆 node_position 資料")
+                    self.logger.debug(f"已清理 {result.rowcount} 筆 node_neighbor_info 資料")
                 except Exception as inner_e:
                     self.logger.error(f"處理資料庫操作時發生錯誤: {inner_e}")
                     await session.rollback()
