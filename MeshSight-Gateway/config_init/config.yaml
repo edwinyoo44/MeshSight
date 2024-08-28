@@ -24,285 +24,286 @@ postgres:
   password: "changeme"
 
 mqtt:
-  host: "mqtt.meshtastic.org"
-  port: 1883
-  identifier: "MeshSight-Gateway"
-  username: "meshdev"
-  password: "large4cats"
-  topics: [
-      # https://meshtastic.org/docs/configuration/radio/lora/#region
-      "msh/US/#",
-      "msh/EU_433/#",
-      "msh/EU_868/#",
-      "msh/CN/#",
-      "msh/JP/#",
-      "msh/ANZ/#",
-      "msh/KR/#",
-      "msh/TW/#",
-      "msh/RU/#",
-      "msh/IN/#",
-      "msh/NZ_865/#",
-      "msh/TH/#",
-      "msh/UA_433/#",
-      "msh/UA_868/#",
-      "msh/MY_433/#",
-      "msh/MY_919/#",
-      "msh/SG_923/#",
-      "msh/LORA_24/#",
-      # https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
-      "msh/AD/#", # Andorra
-      "msh/AE/#", # United Arab Emirates
-      "msh/AF/#", # Afghanistan
-      "msh/AG/#", # Antigua and Barbuda
-      "msh/AI/#", # Anguilla
-      "msh/AL/#", # Albania
-      "msh/AM/#", # Armenia
-      "msh/AO/#", # Angola
-      "msh/AQ/#", # Antarctica
-      "msh/AR/#", # Argentina
-      "msh/AS/#", # American Samoa
-      "msh/AT/#", # Austria
-      "msh/AU/#", # Australia
-      "msh/AW/#", # Aruba
-      "msh/AX/#", # Åland Islands
-      "msh/AZ/#", # Azerbaijan
-      "msh/BA/#", # Bosnia and Herzegovina
-      "msh/BB/#", # Barbados
-      "msh/BD/#", # Bangladesh
-      "msh/BE/#", # Belgium
-      "msh/BF/#", # Burkina Faso
-      "msh/BG/#", # Bulgaria
-      "msh/BH/#", # Bahrain
-      "msh/BI/#", # Burundi
-      "msh/BJ/#", # Benin
-      "msh/BL/#", # Saint Barthélemy
-      "msh/BM/#", # Bermuda
-      "msh/BN/#", # Brunei Darussalam
-      "msh/BO/#", # Bolivia, Plurinational State of
-      "msh/BQ/#", # Bonaire, Sint Eustatius and Saba
-      "msh/BR/#", # Brazil
-      "msh/BS/#", # Bahamas
-      "msh/BT/#", # Bhutan
-      "msh/BV/#", # Bouvet Island
-      "msh/BW/#", # Botswana
-      "msh/BY/#", # Belarus
-      "msh/BZ/#", # Belize
-      "msh/CA/#", # Canada
-      "msh/CC/#", # Cocos (Keeling) Islands
-      "msh/CD/#", # Congo, Democratic Republic of the
-      "msh/CF/#", # Central African Republic
-      "msh/CG/#", # Congo
-      "msh/CH/#", # Switzerland
-      "msh/CI/#", # Côte d'Ivoire
-      "msh/CK/#", # Cook Islands
-      "msh/CL/#", # Chile
-      "msh/CM/#", # Cameroon
-      "msh/CN/#", # China
-      "msh/CO/#", # Colombia
-      "msh/CR/#", # Costa Rica
-      "msh/CU/#", # Cuba
-      "msh/CV/#", # Cabo Verde
-      "msh/CW/#", # Curaçao
-      "msh/CX/#", # Christmas Island
-      "msh/CY/#", # Cyprus
-      "msh/CZ/#", # Czechia
-      "msh/DE/#", # Germany
-      "msh/DJ/#", # Djibouti
-      "msh/DK/#", # Denmark
-      "msh/DM/#", # Dominica
-      "msh/DO/#", # Dominican Republic
-      "msh/DZ/#", # Algeria
-      "msh/EC/#", # Ecuador
-      "msh/EE/#", # Estonia
-      "msh/EG/#", # Egypt
-      "msh/EH/#", # Western Sahara
-      "msh/ER/#", # Eritrea
-      "msh/ES/#", # Spain
-      "msh/ET/#", # Ethiopia
-      "msh/FI/#", # Finland
-      "msh/FJ/#", # Fiji
-      "msh/FK/#", # Falkland Islands (Malvinas)
-      "msh/FM/#", # Micronesia, Federated States of
-      "msh/FO/#", # Faroe Islands
-      "msh/FR/#", # France
-      "msh/GA/#", # Gabon
-      "msh/GB/#", # United Kingdom of Great Britain and Northern Ireland
-      "msh/GD/#", # Grenada
-      "msh/GE/#", # Georgia
-      "msh/GF/#", # French Guiana
-      "msh/GG/#", # Guernsey
-      "msh/GH/#", # Ghana
-      "msh/GI/#", # Gibraltar
-      "msh/GL/#", # Greenland
-      "msh/GM/#", # Gambia
-      "msh/GN/#", # Guinea
-      "msh/GP/#", # Guadeloupe
-      "msh/GQ/#", # Equatorial Guinea
-      "msh/GR/#", # Greece
-      "msh/GS/#", # South Georgia and the South Sandwich Islands
-      "msh/GT/#", # Guatemala
-      "msh/GU/#", # Guam
-      "msh/GW/#", # Guinea-Bissau
-      "msh/GY/#", # Guyana
-      "msh/HK/#", # Hong Kong
-      "msh/HM/#", # Heard Island and McDonald Islands
-      "msh/HN/#", # Honduras
-      "msh/HR/#", # Croatia
-      "msh/HT/#", # Haiti
-      "msh/HU/#", # Hungary
-      "msh/ID/#", # Indonesia
-      "msh/IE/#", # Ireland
-      "msh/IL/#", # Israel
-      "msh/IM/#", # Isle of Man
-      "msh/IN/#", # India
-      "msh/IO/#", # British Indian Ocean Territory
-      "msh/IQ/#", # Iraq
-      "msh/IR/#", # Iran, Islamic Republic of
-      "msh/IS/#", # Iceland
-      "msh/IT/#", # Italy
-      "msh/JE/#", # Jersey
-      "msh/JM/#", # Jamaica
-      "msh/JO/#", # Jordan
-      "msh/JP/#", # Japan
-      "msh/KE/#", # Kenya
-      "msh/KG/#", # Kyrgyzstan
-      "msh/KH/#", # Cambodia
-      "msh/KI/#", # Kiribati
-      "msh/KM/#", # Comoros
-      "msh/KN/#", # Saint Kitts and Nevis
-      "msh/KP/#", # Korea, Democratic People's Republic of
-      "msh/KR/#", # Korea, Republic of
-      "msh/KW/#", # Kuwait
-      "msh/KY/#", # Cayman Islands
-      "msh/KZ/#", # Kazakhstan
-      "msh/LA/#", # Lao People's Democratic Republic
-      "msh/LB/#", # Lebanon
-      "msh/LC/#", # Saint Lucia
-      "msh/LI/#", # Liechtenstein
-      "msh/LK/#", # Sri Lanka
-      "msh/LR/#", # Liberia
-      "msh/LS/#", # Lesotho
-      "msh/LT/#", # Lithuania
-      "msh/LU/#", # Luxembourg
-      "msh/LV/#", # Latvia
-      "msh/LY/#", # Libya
-      "msh/MA/#", # Morocco
-      "msh/MC/#", # Monaco
-      "msh/MD/#", # Moldova, Republic of
-      "msh/ME/#", # Montenegro
-      "msh/MF/#", # Saint Martin (French part)
-      "msh/MG/#", # Madagascar
-      "msh/MH/#", # Marshall Islands
-      "msh/MK/#", # North Macedonia
-      "msh/ML/#", # Mali
-      "msh/MM/#", # Myanmar
-      "msh/MN/#", # Mongolia
-      "msh/MO/#", # Macao
-      "msh/MP/#", # Northern Mariana Islands
-      "msh/MQ/#", # Martinique
-      "msh/MR/#", # Mauritania
-      "msh/MS/#", # Montserrat
-      "msh/MT/#", # Malta
-      "msh/MU/#", # Mauritius
-      "msh/MV/#", # Maldives
-      "msh/MW/#", # Malawi
-      "msh/MX/#", # Mexico
-      "msh/MY/#", # Malaysia
-      "msh/MZ/#", # Mozambique
-      "msh/NA/#", # Namibia
-      "msh/NC/#", # New Caledonia
-      "msh/NE/#", # Niger
-      "msh/NF/#", # Norfolk Island
-      "msh/NG/#", # Nigeria
-      "msh/NI/#", # Nicaragua
-      "msh/NL/#", # Netherlands, Kingdom of the
-      "msh/NO/#", # Norway
-      "msh/NP/#", # Nepal
-      "msh/NR/#", # Nauru
-      "msh/NU/#", # Niue
-      "msh/NZ/#", # New Zealand
-      "msh/OM/#", # Oman
-      "msh/PA/#", # Panama
-      "msh/PE/#", # Peru
-      "msh/PF/#", # French Polynesia
-      "msh/PG/#", # Papua New Guinea
-      "msh/PH/#", # Philippines
-      "msh/PK/#", # Pakistan
-      "msh/PL/#", # Poland
-      "msh/PM/#", # Saint Pierre and Miquelon
-      "msh/PN/#", # Pitcairn
-      "msh/PR/#", # Puerto Rico
-      "msh/PS/#", # Palestine, State of
-      "msh/PT/#", # Portugal
-      "msh/PW/#", # Palau
-      "msh/PY/#", # Paraguay
-      "msh/QA/#", # Qatar
-      "msh/RE/#", # Réunion
-      "msh/RO/#", # Romania
-      "msh/RS/#", # Serbia
-      "msh/RU/#", # Russian Federation
-      "msh/RW/#", # Rwanda
-      "msh/SA/#", # Saudi Arabia
-      "msh/SB/#", # Solomon Islands
-      "msh/SC/#", # Seychelles
-      "msh/SD/#", # Sudan
-      "msh/SE/#", # Sweden
-      "msh/SG/#", # Singapore
-      "msh/SH/#", # Saint Helena, Ascension and Tristan da Cunha
-      "msh/SI/#", # Slovenia
-      "msh/SJ/#", # Svalbard and Jan Mayen
-      "msh/SK/#", # Slovakia
-      "msh/SL/#", # Sierra Leone
-      "msh/SM/#", # San Marino
-      "msh/SN/#", # Senegal
-      "msh/SO/#", # Somalia
-      "msh/SR/#", # Suriname
-      "msh/SS/#", # South Sudan
-      "msh/ST/#", # Sao Tome and Principe
-      "msh/SV/#", # El Salvador
-      "msh/SX/#", # Sint Maarten (Dutch part)
-      "msh/SY/#", # Syrian Arab Republic
-      "msh/SZ/#", # Eswatini
-      "msh/TC/#", # Turks and Caicos Islands
-      "msh/TD/#", # Chad
-      "msh/TF/#", # French Southern Territories
-      "msh/TG/#", # Togo
-      "msh/TH/#", # Thailand
-      "msh/TJ/#", # Tajikistan
-      "msh/TK/#", # Tokelau
-      "msh/TL/#", # Timor-Leste
-      "msh/TM/#", # Turkmenistan
-      "msh/TN/#", # Tunisia
-      "msh/TO/#", # Tonga
-      "msh/TR/#", # Türkiye
-      "msh/TT/#", # Trinidad and Tobago
-      "msh/TV/#", # Tuvalu
-      "msh/TW/#", # Taiwan, Province of China
-      "msh/TZ/#", # Tanzania, United Republic of
-      "msh/UA/#", # Ukraine
-      "msh/UG/#", # Uganda
-      "msh/UM/#", # United States Minor Outlying Islands
-      "msh/US/#", # United States of America
-      "msh/UY/#", # Uruguay
-      "msh/UZ/#", # Uzbekistan
-      "msh/VA/#", # Holy See
-      "msh/VC/#", # Saint Vincent and the Grenadines
-      "msh/VE/#", # Venezuela, Bolivarian Republic of
-      "msh/VG/#", # Virgin Islands (British)
-      "msh/VI/#", # Virgin Islands (U.S.)
-      "msh/VN/#", # Viet Nam
-      "msh/VU/#", # Vanuatu
-      "msh/WF/#", # Wallis and Futuna
-      "msh/WS/#", # Samoa
-      "msh/YE/#", # Yemen
-      "msh/YT/#", # Mayotte
-      "msh/ZA/#", # South Africa
-      "msh/ZM/#", # Zambia
-      "msh/ZW/#", # Zimbabwe
-      # custom
-      "msh/+/2/#",
-      "msh/+/+/2/#",
-      "msh/+/+/+/2/#",
-      "msh/+/+/+/+/2/#",
-      "msh/+/+/+/+/+/2/#",
-    ]
+  client:
+    - host: "mqtt.meshtastic.org"
+      port: 1883
+      identifier: "MeshSight-Gateway"
+      username: "meshdev"
+      password: "large4cats"
+      topics: [
+          # https://meshtastic.org/docs/configuration/radio/lora/#region
+          "msh/US/#",
+          "msh/EU_433/#",
+          "msh/EU_868/#",
+          "msh/CN/#",
+          "msh/JP/#",
+          "msh/ANZ/#",
+          "msh/KR/#",
+          "msh/TW/#",
+          "msh/RU/#",
+          "msh/IN/#",
+          "msh/NZ_865/#",
+          "msh/TH/#",
+          "msh/UA_433/#",
+          "msh/UA_868/#",
+          "msh/MY_433/#",
+          "msh/MY_919/#",
+          "msh/SG_923/#",
+          "msh/LORA_24/#",
+          # https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
+          "msh/AD/#", # Andorra
+          "msh/AE/#", # United Arab Emirates
+          "msh/AF/#", # Afghanistan
+          "msh/AG/#", # Antigua and Barbuda
+          "msh/AI/#", # Anguilla
+          "msh/AL/#", # Albania
+          "msh/AM/#", # Armenia
+          "msh/AO/#", # Angola
+          "msh/AQ/#", # Antarctica
+          "msh/AR/#", # Argentina
+          "msh/AS/#", # American Samoa
+          "msh/AT/#", # Austria
+          "msh/AU/#", # Australia
+          "msh/AW/#", # Aruba
+          "msh/AX/#", # Åland Islands
+          "msh/AZ/#", # Azerbaijan
+          "msh/BA/#", # Bosnia and Herzegovina
+          "msh/BB/#", # Barbados
+          "msh/BD/#", # Bangladesh
+          "msh/BE/#", # Belgium
+          "msh/BF/#", # Burkina Faso
+          "msh/BG/#", # Bulgaria
+          "msh/BH/#", # Bahrain
+          "msh/BI/#", # Burundi
+          "msh/BJ/#", # Benin
+          "msh/BL/#", # Saint Barthélemy
+          "msh/BM/#", # Bermuda
+          "msh/BN/#", # Brunei Darussalam
+          "msh/BO/#", # Bolivia, Plurinational State of
+          "msh/BQ/#", # Bonaire, Sint Eustatius and Saba
+          "msh/BR/#", # Brazil
+          "msh/BS/#", # Bahamas
+          "msh/BT/#", # Bhutan
+          "msh/BV/#", # Bouvet Island
+          "msh/BW/#", # Botswana
+          "msh/BY/#", # Belarus
+          "msh/BZ/#", # Belize
+          "msh/CA/#", # Canada
+          "msh/CC/#", # Cocos (Keeling) Islands
+          "msh/CD/#", # Congo, Democratic Republic of the
+          "msh/CF/#", # Central African Republic
+          "msh/CG/#", # Congo
+          "msh/CH/#", # Switzerland
+          "msh/CI/#", # Côte d'Ivoire
+          "msh/CK/#", # Cook Islands
+          "msh/CL/#", # Chile
+          "msh/CM/#", # Cameroon
+          "msh/CN/#", # China
+          "msh/CO/#", # Colombia
+          "msh/CR/#", # Costa Rica
+          "msh/CU/#", # Cuba
+          "msh/CV/#", # Cabo Verde
+          "msh/CW/#", # Curaçao
+          "msh/CX/#", # Christmas Island
+          "msh/CY/#", # Cyprus
+          "msh/CZ/#", # Czechia
+          "msh/DE/#", # Germany
+          "msh/DJ/#", # Djibouti
+          "msh/DK/#", # Denmark
+          "msh/DM/#", # Dominica
+          "msh/DO/#", # Dominican Republic
+          "msh/DZ/#", # Algeria
+          "msh/EC/#", # Ecuador
+          "msh/EE/#", # Estonia
+          "msh/EG/#", # Egypt
+          "msh/EH/#", # Western Sahara
+          "msh/ER/#", # Eritrea
+          "msh/ES/#", # Spain
+          "msh/ET/#", # Ethiopia
+          "msh/FI/#", # Finland
+          "msh/FJ/#", # Fiji
+          "msh/FK/#", # Falkland Islands (Malvinas)
+          "msh/FM/#", # Micronesia, Federated States of
+          "msh/FO/#", # Faroe Islands
+          "msh/FR/#", # France
+          "msh/GA/#", # Gabon
+          "msh/GB/#", # United Kingdom of Great Britain and Northern Ireland
+          "msh/GD/#", # Grenada
+          "msh/GE/#", # Georgia
+          "msh/GF/#", # French Guiana
+          "msh/GG/#", # Guernsey
+          "msh/GH/#", # Ghana
+          "msh/GI/#", # Gibraltar
+          "msh/GL/#", # Greenland
+          "msh/GM/#", # Gambia
+          "msh/GN/#", # Guinea
+          "msh/GP/#", # Guadeloupe
+          "msh/GQ/#", # Equatorial Guinea
+          "msh/GR/#", # Greece
+          "msh/GS/#", # South Georgia and the South Sandwich Islands
+          "msh/GT/#", # Guatemala
+          "msh/GU/#", # Guam
+          "msh/GW/#", # Guinea-Bissau
+          "msh/GY/#", # Guyana
+          "msh/HK/#", # Hong Kong
+          "msh/HM/#", # Heard Island and McDonald Islands
+          "msh/HN/#", # Honduras
+          "msh/HR/#", # Croatia
+          "msh/HT/#", # Haiti
+          "msh/HU/#", # Hungary
+          "msh/ID/#", # Indonesia
+          "msh/IE/#", # Ireland
+          "msh/IL/#", # Israel
+          "msh/IM/#", # Isle of Man
+          "msh/IN/#", # India
+          "msh/IO/#", # British Indian Ocean Territory
+          "msh/IQ/#", # Iraq
+          "msh/IR/#", # Iran, Islamic Republic of
+          "msh/IS/#", # Iceland
+          "msh/IT/#", # Italy
+          "msh/JE/#", # Jersey
+          "msh/JM/#", # Jamaica
+          "msh/JO/#", # Jordan
+          "msh/JP/#", # Japan
+          "msh/KE/#", # Kenya
+          "msh/KG/#", # Kyrgyzstan
+          "msh/KH/#", # Cambodia
+          "msh/KI/#", # Kiribati
+          "msh/KM/#", # Comoros
+          "msh/KN/#", # Saint Kitts and Nevis
+          "msh/KP/#", # Korea, Democratic People's Republic of
+          "msh/KR/#", # Korea, Republic of
+          "msh/KW/#", # Kuwait
+          "msh/KY/#", # Cayman Islands
+          "msh/KZ/#", # Kazakhstan
+          "msh/LA/#", # Lao People's Democratic Republic
+          "msh/LB/#", # Lebanon
+          "msh/LC/#", # Saint Lucia
+          "msh/LI/#", # Liechtenstein
+          "msh/LK/#", # Sri Lanka
+          "msh/LR/#", # Liberia
+          "msh/LS/#", # Lesotho
+          "msh/LT/#", # Lithuania
+          "msh/LU/#", # Luxembourg
+          "msh/LV/#", # Latvia
+          "msh/LY/#", # Libya
+          "msh/MA/#", # Morocco
+          "msh/MC/#", # Monaco
+          "msh/MD/#", # Moldova, Republic of
+          "msh/ME/#", # Montenegro
+          "msh/MF/#", # Saint Martin (French part)
+          "msh/MG/#", # Madagascar
+          "msh/MH/#", # Marshall Islands
+          "msh/MK/#", # North Macedonia
+          "msh/ML/#", # Mali
+          "msh/MM/#", # Myanmar
+          "msh/MN/#", # Mongolia
+          "msh/MO/#", # Macao
+          "msh/MP/#", # Northern Mariana Islands
+          "msh/MQ/#", # Martinique
+          "msh/MR/#", # Mauritania
+          "msh/MS/#", # Montserrat
+          "msh/MT/#", # Malta
+          "msh/MU/#", # Mauritius
+          "msh/MV/#", # Maldives
+          "msh/MW/#", # Malawi
+          "msh/MX/#", # Mexico
+          "msh/MY/#", # Malaysia
+          "msh/MZ/#", # Mozambique
+          "msh/NA/#", # Namibia
+          "msh/NC/#", # New Caledonia
+          "msh/NE/#", # Niger
+          "msh/NF/#", # Norfolk Island
+          "msh/NG/#", # Nigeria
+          "msh/NI/#", # Nicaragua
+          "msh/NL/#", # Netherlands, Kingdom of the
+          "msh/NO/#", # Norway
+          "msh/NP/#", # Nepal
+          "msh/NR/#", # Nauru
+          "msh/NU/#", # Niue
+          "msh/NZ/#", # New Zealand
+          "msh/OM/#", # Oman
+          "msh/PA/#", # Panama
+          "msh/PE/#", # Peru
+          "msh/PF/#", # French Polynesia
+          "msh/PG/#", # Papua New Guinea
+          "msh/PH/#", # Philippines
+          "msh/PK/#", # Pakistan
+          "msh/PL/#", # Poland
+          "msh/PM/#", # Saint Pierre and Miquelon
+          "msh/PN/#", # Pitcairn
+          "msh/PR/#", # Puerto Rico
+          "msh/PS/#", # Palestine, State of
+          "msh/PT/#", # Portugal
+          "msh/PW/#", # Palau
+          "msh/PY/#", # Paraguay
+          "msh/QA/#", # Qatar
+          "msh/RE/#", # Réunion
+          "msh/RO/#", # Romania
+          "msh/RS/#", # Serbia
+          "msh/RU/#", # Russian Federation
+          "msh/RW/#", # Rwanda
+          "msh/SA/#", # Saudi Arabia
+          "msh/SB/#", # Solomon Islands
+          "msh/SC/#", # Seychelles
+          "msh/SD/#", # Sudan
+          "msh/SE/#", # Sweden
+          "msh/SG/#", # Singapore
+          "msh/SH/#", # Saint Helena, Ascension and Tristan da Cunha
+          "msh/SI/#", # Slovenia
+          "msh/SJ/#", # Svalbard and Jan Mayen
+          "msh/SK/#", # Slovakia
+          "msh/SL/#", # Sierra Leone
+          "msh/SM/#", # San Marino
+          "msh/SN/#", # Senegal
+          "msh/SO/#", # Somalia
+          "msh/SR/#", # Suriname
+          "msh/SS/#", # South Sudan
+          "msh/ST/#", # Sao Tome and Principe
+          "msh/SV/#", # El Salvador
+          "msh/SX/#", # Sint Maarten (Dutch part)
+          "msh/SY/#", # Syrian Arab Republic
+          "msh/SZ/#", # Eswatini
+          "msh/TC/#", # Turks and Caicos Islands
+          "msh/TD/#", # Chad
+          "msh/TF/#", # French Southern Territories
+          "msh/TG/#", # Togo
+          "msh/TH/#", # Thailand
+          "msh/TJ/#", # Tajikistan
+          "msh/TK/#", # Tokelau
+          "msh/TL/#", # Timor-Leste
+          "msh/TM/#", # Turkmenistan
+          "msh/TN/#", # Tunisia
+          "msh/TO/#", # Tonga
+          "msh/TR/#", # Türkiye
+          "msh/TT/#", # Trinidad and Tobago
+          "msh/TV/#", # Tuvalu
+          "msh/TW/#", # Taiwan, Province of China
+          "msh/TZ/#", # Tanzania, United Republic of
+          "msh/UA/#", # Ukraine
+          "msh/UG/#", # Uganda
+          "msh/UM/#", # United States Minor Outlying Islands
+          "msh/US/#", # United States of America
+          "msh/UY/#", # Uruguay
+          "msh/UZ/#", # Uzbekistan
+          "msh/VA/#", # Holy See
+          "msh/VC/#", # Saint Vincent and the Grenadines
+          "msh/VE/#", # Venezuela, Bolivarian Republic of
+          "msh/VG/#", # Virgin Islands (British)
+          "msh/VI/#", # Virgin Islands (U.S.)
+          "msh/VN/#", # Viet Nam
+          "msh/VU/#", # Vanuatu
+          "msh/WF/#", # Wallis and Futuna
+          "msh/WS/#", # Samoa
+          "msh/YE/#", # Yemen
+          "msh/YT/#", # Mayotte
+          "msh/ZA/#", # South Africa
+          "msh/ZM/#", # Zambia
+          "msh/ZW/#", # Zimbabwe
+          # custom
+          "msh/+/2/#",
+          "msh/+/+/2/#",
+          "msh/+/+/+/2/#",
+          "msh/+/+/+/+/2/#",
+          "msh/+/+/+/+/+/2/#",
+        ]

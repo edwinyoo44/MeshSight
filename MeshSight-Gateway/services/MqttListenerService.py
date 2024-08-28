@@ -45,26 +45,34 @@ class MqttListenerService:
         self.config = ConfigUtil.read_config()
         self.logger = logging.getLogger(__name__)
 
-    async def start(self):
+    async def handle_client(self, client_config):
         while True:
             try:
+                self.logger.info(f"正在訂閱 {client_config['host']} 的服務...")
                 async with aiomqtt.Client(
-                    hostname=self.config["mqtt"]["host"],
-                    port=self.config["mqtt"]["port"],
-                    identifier=self.config["mqtt"]["identifier"],
-                    username=self.config["mqtt"]["username"],
-                    password=self.config["mqtt"]["password"],
+                    hostname=client_config["host"],
+                    port=client_config["port"],
+                    identifier=client_config["identifier"],
+                    username=client_config["username"],
+                    password=client_config["password"],
                 ) as client:
                     # 訂閱多個主題
-                    for topic in self.config["mqtt"]["topics"]:
+                    for topic in client_config["topics"]:
                         await client.subscribe(topic)
                     async for message in client.messages:
                         await self.on_message(client, None, message)
             except Exception as e:
                 self.logger.error(f"{inspect.currentframe().f_code.co_name}: {e}")
-                self.logger.error(f"訂閱服務發生錯誤，正在重試...")
+                self.logger.error(f"{client_config['host']} 訂閱服務發生錯誤，正在重試...")
                 await asyncio.sleep(3)  # 等待一段時間後重試
                 continue
+
+    async def start(self):
+        tasks = []
+        # 讀取設定檔
+        for mqtt_client in self.config["mqtt"]['client']:
+            tasks.append(self.handle_client(mqtt_client))
+        await asyncio.gather(*tasks)
 
     async def on_message(self, client, userdata, message):
         try:
@@ -911,7 +919,9 @@ class MqttListenerService:
                     ),
                 )
             )
-            node_position.precision_bits = self.config["meshtastic"]["position"]["maxPrecisionBits"]
+            node_position.precision_bits = self.config["meshtastic"]["position"][
+                "maxPrecisionBits"
+            ]
 
         async for session in get_db_connection_async():
             try:
