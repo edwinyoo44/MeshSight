@@ -1,10 +1,28 @@
 import logging
 import math
+import random
 
 logger = logging.getLogger(__name__)
 
 
 class MeshtasticUtil:
+
+    # 將定位資訊模糊處理到指定的距離
+    def blur_position(lat: float, lon: float, distance: int):
+        # 將緯度和經度轉換為弧度
+        lat_rad = math.radians(lat)
+        lon_rad = math.radians(lon)
+
+        # 計算經度和緯度的偏移量（地球半徑約為 6371 公里）
+        delta_lat = distance / 6371000  # 將距離轉換為弧度
+        delta_lon = distance / (6371000 * math.cos(lat_rad))  # 將距離轉換為弧度
+
+        # 產生隨機的偏移量
+        random_lat = lat_rad + random.uniform(-delta_lat, delta_lat)
+        random_lon = lon_rad + random.uniform(-delta_lon, delta_lon)
+
+        # 將弧度轉換回度
+        return (math.degrees(random_lat), math.degrees(random_lon))
 
     def convert_node_id_from_int_to_hex(id: int):
         id_hex = f"{id:08x}"

@@ -896,13 +896,23 @@ class MqttListenerService:
     async def create_or_update_node_position(
         self, node_position: NodePosition
     ) -> NodePosition:
-        # 檢查精度是否符合限制
+        # 檢查精度是否符合限制，如果沒有則進行模糊處理
         if (
             node_position.precision_bits is None
             or node_position.precision_bits
             > self.config["meshtastic"]["position"]["maxPrecisionBits"]
         ):
-            return
+            (node_position.latitude, node_position.longitude) = (
+                MeshtasticUtil.blur_position(
+                    node_position.latitude,
+                    node_position.longitude,
+                    MeshtasticUtil.convert_precision_to_meter(
+                        self.config["meshtastic"]["position"]["maxPrecisionBits"]
+                    ),
+                )
+            )
+            node_position.precision_bits = self.config["meshtastic"]["position"]["maxPrecisionBits"]
+
         async for session in get_db_connection_async():
             try:
                 # 檢查 Node 是否存在
