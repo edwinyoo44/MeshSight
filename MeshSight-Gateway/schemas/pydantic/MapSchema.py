@@ -16,6 +16,7 @@ class MapCoordinatesResponse(BaseModel):
     items: List[MapCoordinatesItem]
     nodeLine: List[Tuple[int, int]]
     nodeCoverage: List[Tuple[int, int, int]]
+    nodeLineNeighbor: List[Tuple[int, int]]
 
     @classmethod
     def parse_raw(cls, data):

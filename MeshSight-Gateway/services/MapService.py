@@ -5,9 +5,12 @@ from typing import List, Tuple
 from exceptions.BusinessLogicException import BusinessLogicException
 from datetime import datetime
 from fastapi import Depends
+from models.NodeNeighborEdgeModel import NodeNeighborEdge
+from models.NodeNeighborInfoModel import NodeNeighborInfo
 from schemas.pydantic.MapSchema import MapCoordinatesItem, MapCoordinatesResponse
 from schemas.pydantic.NodeSchema import InfoItem, PostionItem
 from repositories.NodeInfoRepository import NodeInfoRepository
+from repositories.NodeNeighborInfoRepository import NodeNeighborInfoRepository
 from repositories.NodePositionRepository import NodePositionRepository
 from utils.ConfigUtil import ConfigUtil
 from utils.MeshtasticUtil import MeshtasticUtil
@@ -19,11 +22,13 @@ class MapService:
     def __init__(
         self,
         nodeInfoRepository: NodeInfoRepository = Depends(),
+        nodeNeighborInfoRepository: NodeNeighborInfoRepository = Depends(),
         nodePositionRepository: NodePositionRepository = Depends(),
     ) -> None:
         self.config = ConfigUtil.read_config()
         self.logger = logging.getLogger(__name__)
         self.nodeInfoRepository = nodeInfoRepository
+        self.nodeNeighborInfoRepository = nodeNeighborInfoRepository
         self.nodePositionRepository = nodePositionRepository
 
     async def coordinates(
@@ -185,8 +190,35 @@ class MapService:
                                 node_coverage.append(
                                     (sorted_ids[0], sorted_ids[1], sorted_ids[2])
                                 )
+            # 節點連線 neighbor_
+            node_line_neighbor: List[Tuple[int, int]] = []
+            node_neighbor_list: List[Tuple[NodeNeighborInfo, NodeNeighborEdge]] = (
+                await self.nodeNeighborInfoRepository.fetch_node_node_neighbor_info_by_time_range(
+                    start_time, end_time
+                )
+            )
+            # 遍歷 node_neighbor_list
+            for info, edge in node_neighbor_list:
+                node_a = next((x for x in items if x.id == edge.node_id), None)
+                if not node_a:
+                    continue
+                node_b = next((x for x in items if x.id == edge.edge_node_id), None)
+                if not node_b:
+                    continue
+                if (
+                    min(node_a.id, node_b.id),
+                    max(node_a.id, node_b.id),
+                ) not in node_line_neighbor:
+                    # 加入節點連線，確保較小的 ID 在前
+                    node_line_neighbor.append(
+                        (min(node_a.id, node_b.id), max(node_a.id, node_b.id))
+                    )
+
             response = MapCoordinatesResponse(
-                items=items, nodeLine=node_line, nodeCoverage=node_coverage
+                items=items,
+                nodeLine=node_line,
+                nodeCoverage=node_coverage,
+                nodeLineNeighbor=node_line_neighbor,
             )
             OtherUtil.write_cache_json(
                 cache_name, json.dumps(response.dict(), default=str)
