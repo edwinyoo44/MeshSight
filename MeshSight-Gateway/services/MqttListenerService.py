@@ -35,6 +35,7 @@ from models.NodeTelemetryDeviceModel import NodeTelemetryDevice
 from models.NodeTelemetryEnvironmentModel import NodeTelemetryEnvironment
 from models.NodeTelemetryPowerModel import NodeTelemetryPower
 from sqlalchemy import delete, update
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.future import select
 from utils.ConfigUtil import ConfigUtil
 from utils.MeshtasticUtil import MeshtasticUtil
@@ -63,14 +64,16 @@ class MqttListenerService:
                         await self.on_message(client, None, message)
             except Exception as e:
                 self.logger.error(f"{inspect.currentframe().f_code.co_name}: {e}")
-                self.logger.error(f"{client_config['host']} 訂閱服務發生錯誤，正在重試...")
+                self.logger.error(
+                    f"{client_config['host']} 訂閱服務發生錯誤，正在重試..."
+                )
                 await asyncio.sleep(3)  # 等待一段時間後重試
                 continue
 
     async def start(self):
         tasks = []
         # 讀取設定檔
-        for mqtt_client in self.config["mqtt"]['client']:
+        for mqtt_client in self.config["mqtt"]["client"]:
             tasks.append(self.handle_client(mqtt_client))
         await asyncio.gather(*tasks)
 
@@ -493,6 +496,9 @@ class MqttListenerService:
 
             if "time" not in payload:
                 return
+
+            if datetime.fromtimestamp(payload.get("time")) > datetime.now():
+                payload["time"] = datetime.now().timestamp()
 
             air_quality_metrics = payload.get("air_quality_metrics", None)
             if air_quality_metrics:
@@ -933,41 +939,60 @@ class MqttListenerService:
                             last_heard_at=node_position.update_at,
                         )
                     )
+
                 # 檢查 NodePosition 是否存在
-                result = await session.execute(
-                    select(NodePosition)
-                    .where(NodePosition.node_id == node_position.node_id)
-                    .where(NodePosition.create_at == node_position.create_at)
-                    .where(NodePosition.topic == node_position.topic)
-                )
-                existing_node_position = result.scalar()
-                # 如果 NodePosition 不存在，則新增
-                if existing_node_position is None:
-                    session.add(node_position)
-                    await session.commit()
-                    await session.refresh(node_position)
-                    return node_position
+                existing_node_position = (
+                    await session.execute(
+                        select(NodePosition)
+                        .where(NodePosition.node_id == node_position.node_id)
+                        .where(NodePosition.create_at == node_position.create_at)
+                        .where(NodePosition.topic == node_position.topic)
+                    )
+                ).scalar()
+
                 # 如果 NodePosition 存在，但傳入比較舊，則直接回傳
-                if node_position.update_at < existing_node_position.update_at:
+                if (
+                    existing_node_position is not None
+                    and node_position.update_at < existing_node_position.update_at
+                ):
                     return existing_node_position
-                # 更新 NodePosition
-                await session.execute(
-                    update(NodePosition)
-                    .where(NodePosition.node_id == node_position.node_id)
-                    .where(NodePosition.create_at == node_position.create_at)
-                    .where(NodePosition.topic == node_position.topic)
+
+                # 動態構建 set_ 字典，移除值為 None 的鍵
+                data = {
+                    "latitude": node_position.latitude,
+                    "longitude": node_position.longitude,
+                    "altitude": node_position.altitude,
+                    "precision_bits": node_position.precision_bits,
+                    "sats_in_view": node_position.sats_in_view,
+                    "update_at": node_position.update_at,
+                }
+                data = {k: v for k, v in data.items() if v is not None}
+
+                # 使用 ON CONFLICT 子句來新增或更新
+                stmt = (
+                    insert(NodePosition)
                     .values(
-                        latitude=node_position.latitude,
-                        longitude=node_position.longitude,
-                        altitude=node_position.altitude,
-                        precision_bits=node_position.precision_bits,
-                        sats_in_view=node_position.sats_in_view,
-                        update_at=node_position.update_at,
+                        node_id=node_position.node_id,
+                        create_at=node_position.create_at,
+                        topic=node_position.topic,
+                        **data,
+                    )
+                    .on_conflict_do_update(
+                        index_elements=["node_id", "create_at", "topic"],
+                        set_=data,
                     )
                 )
+                await session.execute(stmt)
                 await session.commit()
-                await session.refresh(existing_node_position)
-                return node_position
+                final_node_position = (
+                    await session.execute(
+                        select(NodePosition)
+                        .where(NodePosition.node_id == node_position.node_id)
+                        .where(NodePosition.create_at == node_position.create_at)
+                        .where(NodePosition.topic == node_position.topic)
+                    )
+                ).scalar()
+                return final_node_position
             except Exception as e:
                 await session.rollback()
                 raise e
@@ -988,111 +1013,78 @@ class MqttListenerService:
                             last_heard_at=node_telemetry_air_quality.update_at,
                         )
                     )
+
                 # 檢查 NodeTelemetryAirQuality 是否存在
-                result = await session.execute(
-                    select(NodeTelemetryAirQuality)
-                    .where(
-                        NodeTelemetryAirQuality.node_id
-                        == node_telemetry_air_quality.node_id
+                existing_node_telemetry_air_quality = (
+                    await session.execute(
+                        select(NodeTelemetryAirQuality)
+                        .where(
+                            NodeTelemetryAirQuality.node_id
+                            == node_telemetry_air_quality.node_id
+                        )
+                        .where(
+                            NodeTelemetryAirQuality.create_at
+                            == node_telemetry_air_quality.create_at
+                        )
                     )
-                    .where(
-                        NodeTelemetryAirQuality.create_at
-                        == node_telemetry_air_quality.create_at
-                    )
-                )
-                existing_node_telemetry_air_quality = result.scalar()
-                # 如果 NodeTelemetryAirQuality 不存在，則新增
-                if existing_node_telemetry_air_quality is None:
-                    session.add(node_telemetry_air_quality)
-                    await session.commit()
-                    await session.refresh(node_telemetry_air_quality)
-                    return node_telemetry_air_quality
+                ).scalar()
+
                 # 如果 NodeTelemetryAirQuality 存在，但傳入比較舊，則直接回傳
                 if (
-                    node_telemetry_air_quality.update_at
+                    existing_node_telemetry_air_quality is not None
+                    and node_telemetry_air_quality.update_at
                     < existing_node_telemetry_air_quality.update_at
                 ):
                     return existing_node_telemetry_air_quality
-                # 更新 NodeTelemetryAirQuality
-                await session.execute(
-                    update(NodeTelemetryAirQuality)
-                    .where(
-                        NodeTelemetryAirQuality.node_id
-                        == node_telemetry_air_quality.node_id
-                    )
-                    .where(
-                        NodeTelemetryAirQuality.create_at
-                        == node_telemetry_air_quality.create_at
-                    )
+
+                # 動態構建 set_ 字典，移除值為 None 的鍵
+                data = {
+                    "pm10_standard": node_telemetry_air_quality.pm10_standard,
+                    "pm25_standard": node_telemetry_air_quality.pm25_standard,
+                    "pm100_standard": node_telemetry_air_quality.pm100_standard,
+                    "pm10_environmental": node_telemetry_air_quality.pm10_environmental,
+                    "pm25_environmental": node_telemetry_air_quality.pm25_environmental,
+                    "pm100_environmental": node_telemetry_air_quality.pm100_environmental,
+                    "particles_03um": node_telemetry_air_quality.particles_03um,
+                    "particles_05um": node_telemetry_air_quality.particles_05um,
+                    "particles_10um": node_telemetry_air_quality.particles_10um,
+                    "particles_25um": node_telemetry_air_quality.particles_25um,
+                    "particles_50um": node_telemetry_air_quality.particles_50um,
+                    "particles_100um": node_telemetry_air_quality.particles_100um,
+                    "update_at": node_telemetry_air_quality.update_at,
+                    "topic": node_telemetry_air_quality.topic,
+                }
+                data = {k: v for k, v in data.items() if v is not None}
+
+                # 使用 ON CONFLICT 子句來新增或更新
+                stmt = (
+                    insert(NodeTelemetryAirQuality)
                     .values(
-                        pm10_standard=(
-                            node_telemetry_air_quality.pm10_standard
-                            if node_telemetry_air_quality.pm10_standard is not None
-                            else existing_node_telemetry_air_quality.pm10_standard
-                        ),
-                        pm25_standard=(
-                            node_telemetry_air_quality.pm25_standard
-                            if node_telemetry_air_quality.pm25_standard is not None
-                            else existing_node_telemetry_air_quality.pm25_standard
-                        ),
-                        pm100_standard=(
-                            node_telemetry_air_quality.pm100_standard
-                            if node_telemetry_air_quality.pm100_standard is not None
-                            else existing_node_telemetry_air_quality.pm100_standard
-                        ),
-                        pm10_environmental=(
-                            node_telemetry_air_quality.pm10_environmental
-                            if node_telemetry_air_quality.pm10_environmental is not None
-                            else existing_node_telemetry_air_quality.pm10_environmental
-                        ),
-                        pm25_environmental=(
-                            node_telemetry_air_quality.pm25_environmental
-                            if node_telemetry_air_quality.pm25_environmental is not None
-                            else existing_node_telemetry_air_quality.pm25_environmental
-                        ),
-                        pm100_environmental=(
-                            node_telemetry_air_quality.pm100_environmental
-                            if node_telemetry_air_quality.pm100_environmental
-                            is not None
-                            else existing_node_telemetry_air_quality.pm100_environmental
-                        ),
-                        particles_03um=(
-                            node_telemetry_air_quality.particles_03um
-                            if node_telemetry_air_quality.particles_03um is not None
-                            else existing_node_telemetry_air_quality.particles_03um
-                        ),
-                        particles_05um=(
-                            node_telemetry_air_quality.particles_05um
-                            if node_telemetry_air_quality.particles_05um is not None
-                            else existing_node_telemetry_air_quality.particles_05um
-                        ),
-                        particles_10um=(
-                            node_telemetry_air_quality.particles_10um
-                            if node_telemetry_air_quality.particles_10um is not None
-                            else existing_node_telemetry_air_quality.particles_10um
-                        ),
-                        particles_25um=(
-                            node_telemetry_air_quality.particles_25um
-                            if node_telemetry_air_quality.particles_25um is not None
-                            else existing_node_telemetry_air_quality.particles_25um
-                        ),
-                        particles_50um=(
-                            node_telemetry_air_quality.particles_50um
-                            if node_telemetry_air_quality.particles_50um is not None
-                            else existing_node_telemetry_air_quality.particles_50um
-                        ),
-                        particles_100um=(
-                            node_telemetry_air_quality.particles_100um
-                            if node_telemetry_air_quality.particles_100um is not None
-                            else existing_node_telemetry_air_quality.particles_100um
-                        ),
-                        update_at=node_telemetry_air_quality.update_at,
-                        topic=node_telemetry_air_quality.topic,
+                        node_id=node_telemetry_air_quality.node_id,
+                        create_at=node_telemetry_air_quality.create_at,
+                        **data,
+                    )
+                    .on_conflict_do_update(
+                        index_elements=["node_id", "create_at"],
+                        set_=data,
                     )
                 )
+                await session.execute(stmt)
                 await session.commit()
-                await session.refresh(existing_node_telemetry_air_quality)
-                return existing_node_telemetry_air_quality
+                final_node_telemetry_air_quality = (
+                    await session.execute(
+                        select(NodeTelemetryAirQuality)
+                        .where(
+                            NodeTelemetryAirQuality.node_id
+                            == node_telemetry_air_quality.node_id
+                        )
+                        .where(
+                            NodeTelemetryAirQuality.create_at
+                            == node_telemetry_air_quality.create_at
+                        )
+                    )
+                ).scalar()
+                return final_node_telemetry_air_quality
             except Exception as e:
                 await session.rollback()
                 raise e
@@ -1113,67 +1105,69 @@ class MqttListenerService:
                             last_heard_at=node_telemetry_device.update_at,
                         )
                     )
+
                 # 檢查 NodeTelemetryDevice 是否存在
-                result = await session.execute(
-                    select(NodeTelemetryDevice)
-                    .where(NodeTelemetryDevice.node_id == node_telemetry_device.node_id)
-                    .where(
-                        NodeTelemetryDevice.create_at == node_telemetry_device.create_at
+                existing_node_telemetry_device = (
+                    await session.execute(
+                        select(NodeTelemetryDevice)
+                        .where(
+                            NodeTelemetryDevice.node_id == node_telemetry_device.node_id
+                        )
+                        .where(
+                            NodeTelemetryDevice.create_at
+                            == node_telemetry_device.create_at
+                        )
                     )
-                )
-                existing_node_telemetry_device = result.scalar()
-                # 如果 NodeTelemetryDevice 不存在，則新增
-                if existing_node_telemetry_device is None:
-                    session.add(node_telemetry_device)
-                    await session.commit()
-                    await session.refresh(node_telemetry_device)
-                    return node_telemetry_device
+                ).scalar()
+
                 # 如果 NodeTelemetryDevice 存在，但傳入比較舊，則直接回傳
                 if (
-                    node_telemetry_device.update_at
+                    existing_node_telemetry_device is not None
+                    and node_telemetry_device.update_at
                     < existing_node_telemetry_device.update_at
                 ):
                     return existing_node_telemetry_device
-                # 更新 NodeTelemetryDevice
-                await session.execute(
-                    update(NodeTelemetryDevice)
-                    .where(NodeTelemetryDevice.node_id == node_telemetry_device.node_id)
-                    .where(
-                        NodeTelemetryDevice.create_at == node_telemetry_device.create_at
-                    )
+
+                # 動態構建 set_ 字典，移除值為 None 的鍵
+                data = {
+                    "battery_level": node_telemetry_device.battery_level,
+                    "voltage": node_telemetry_device.voltage,
+                    "channel_utilization": node_telemetry_device.channel_utilization,
+                    "air_util_tx": node_telemetry_device.air_util_tx,
+                    "uptime_seconds": node_telemetry_device.uptime_seconds,
+                    "update_at": node_telemetry_device.update_at,
+                    "topic": node_telemetry_device.topic,
+                }
+                data = {k: v for k, v in data.items() if v is not None}
+
+                # 使用 ON CONFLICT 子句來新增或更新
+                stmt = (
+                    insert(NodeTelemetryDevice)
                     .values(
-                        battery_level=(
-                            node_telemetry_device.battery_level
-                            if node_telemetry_device.battery_level is not None
-                            else existing_node_telemetry_device.battery_level
-                        ),
-                        voltage=(
-                            node_telemetry_device.voltage
-                            if node_telemetry_device.voltage is not None
-                            else existing_node_telemetry_device.voltage
-                        ),
-                        channel_utilization=(
-                            node_telemetry_device.channel_utilization
-                            if node_telemetry_device.channel_utilization is not None
-                            else existing_node_telemetry_device.channel_utilization
-                        ),
-                        air_util_tx=(
-                            node_telemetry_device.air_util_tx
-                            if node_telemetry_device.air_util_tx is not None
-                            else existing_node_telemetry_device.air_util_tx
-                        ),
-                        uptime_seconds=(
-                            node_telemetry_device.uptime_seconds
-                            if node_telemetry_device.uptime_seconds is not None
-                            else existing_node_telemetry_device.uptime_seconds
-                        ),
-                        update_at=node_telemetry_device.update_at,
-                        topic=node_telemetry_device.topic,
+                        node_id=node_telemetry_device.node_id,
+                        create_at=node_telemetry_device.create_at,
+                        **data,
+                    )
+                    .on_conflict_do_update(
+                        index_elements=["node_id", "create_at"],
+                        set_=data,
                     )
                 )
+                await session.execute(stmt)
                 await session.commit()
-                await session.refresh(existing_node_telemetry_device)
-                return existing_node_telemetry_device
+                final_node_telemetry_device = (
+                    await session.execute(
+                        select(NodeTelemetryDevice)
+                        .where(
+                            NodeTelemetryDevice.node_id == node_telemetry_device.node_id
+                        )
+                        .where(
+                            NodeTelemetryDevice.create_at
+                            == node_telemetry_device.create_at
+                        )
+                    )
+                ).scalar()
+                return final_node_telemetry_device
             except Exception as e:
                 await session.rollback()
                 raise e
@@ -1194,136 +1188,83 @@ class MqttListenerService:
                             last_heard_at=node_telemetry_environment.update_at,
                         )
                     )
+
                 # 檢查 NodeTelemetryEnvironment 是否存在
-                result = await session.execute(
-                    select(NodeTelemetryEnvironment)
-                    .where(
-                        NodeTelemetryEnvironment.node_id
-                        == node_telemetry_environment.node_id
+                existing_node_telemetry_environment = (
+                    await session.execute(
+                        select(NodeTelemetryEnvironment)
+                        .where(
+                            NodeTelemetryEnvironment.node_id
+                            == node_telemetry_environment.node_id
+                        )
+                        .where(
+                            NodeTelemetryEnvironment.create_at
+                            == node_telemetry_environment.create_at
+                        )
                     )
-                    .where(
-                        NodeTelemetryEnvironment.create_at
-                        == node_telemetry_environment.create_at
-                    )
-                )
-                existing_node_telemetry_environment = result.scalar()
-                # 如果 NodeTelemetryEnvironment 不存在，則新增
-                if existing_node_telemetry_environment is None:
-                    session.add(node_telemetry_environment)
-                    await session.commit()
-                    await session.refresh(node_telemetry_environment)
-                    return node_telemetry_environment
+                ).scalar()
+
                 # 如果 NodeTelemetryEnvironment 存在，但傳入比較舊，則直接回傳
                 if (
-                    node_telemetry_environment.update_at
+                    existing_node_telemetry_environment is not None
+                    and node_telemetry_environment.update_at
                     < existing_node_telemetry_environment.update_at
                 ):
                     return existing_node_telemetry_environment
-                # 更新 NodeTelemetryEnvironment
-                await session.execute(
-                    update(NodeTelemetryEnvironment)
-                    .where(
-                        NodeTelemetryEnvironment.node_id
-                        == node_telemetry_environment.node_id
-                    )
-                    .where(
-                        NodeTelemetryEnvironment.create_at
-                        == node_telemetry_environment.create_at
-                    )
+
+                # 動態構建 set_ 字典，移除值為 None 的鍵
+                data = {
+                    "temperature": node_telemetry_environment.temperature,
+                    "relative_humidity": node_telemetry_environment.relative_humidity,
+                    "barometric_pressure": node_telemetry_environment.barometric_pressure,
+                    "gas_resistance": node_telemetry_environment.gas_resistance,
+                    "voltage": node_telemetry_environment.voltage,
+                    "current": node_telemetry_environment.current,
+                    "iaq": node_telemetry_environment.iaq,
+                    "distance": node_telemetry_environment.distance,
+                    "lux": node_telemetry_environment.lux,
+                    "white_lux": node_telemetry_environment.white_lux,
+                    "ir_lux": node_telemetry_environment.ir_lux,
+                    "uv_lux": node_telemetry_environment.uv_lux,
+                    "wind_direction": node_telemetry_environment.wind_direction,
+                    "wind_speed": node_telemetry_environment.wind_speed,
+                    "weight": node_telemetry_environment.weight,
+                    "wind_gust": node_telemetry_environment.wind_gust,
+                    "wind_lull": node_telemetry_environment.wind_lull,
+                    "update_at": node_telemetry_environment.update_at,
+                    "topic": node_telemetry_environment.topic,
+                }
+                data = {k: v for k, v in data.items() if v is not None}
+
+                # 使用 ON CONFLICT 子句來新增或更新
+                stmt = (
+                    insert(NodeTelemetryEnvironment)
                     .values(
-                        temperature=(
-                            node_telemetry_environment.temperature
-                            if node_telemetry_environment.temperature is not None
-                            else existing_node_telemetry_environment.temperature
-                        ),
-                        relative_humidity=(
-                            node_telemetry_environment.relative_humidity
-                            if node_telemetry_environment.relative_humidity is not None
-                            else existing_node_telemetry_environment.relative_humidity
-                        ),
-                        barometric_pressure=(
-                            node_telemetry_environment.barometric_pressure
-                            if node_telemetry_environment.barometric_pressure
-                            is not None
-                            else existing_node_telemetry_environment.barometric_pressure
-                        ),
-                        gas_resistance=(
-                            node_telemetry_environment.gas_resistance
-                            if node_telemetry_environment.gas_resistance is not None
-                            else existing_node_telemetry_environment.gas_resistance
-                        ),
-                        voltage=(
-                            node_telemetry_environment.voltage
-                            if node_telemetry_environment.voltage is not None
-                            else existing_node_telemetry_environment.voltage
-                        ),
-                        current=(
-                            node_telemetry_environment.current
-                            if node_telemetry_environment.current is not None
-                            else existing_node_telemetry_environment.current
-                        ),
-                        iaq=(
-                            node_telemetry_environment.iaq
-                            if node_telemetry_environment.iaq is not None
-                            else existing_node_telemetry_environment.iaq
-                        ),
-                        distance=(
-                            node_telemetry_environment.distance
-                            if node_telemetry_environment.distance is not None
-                            else existing_node_telemetry_environment.distance
-                        ),
-                        lux=(
-                            node_telemetry_environment.lux
-                            if node_telemetry_environment.lux is not None
-                            else existing_node_telemetry_environment.lux
-                        ),
-                        white_lux=(
-                            node_telemetry_environment.white_lux
-                            if node_telemetry_environment.white_lux is not None
-                            else existing_node_telemetry_environment.white_lux
-                        ),
-                        ir_lux=(
-                            node_telemetry_environment.ir_lux
-                            if node_telemetry_environment.ir_lux is not None
-                            else existing_node_telemetry_environment.ir_lux
-                        ),
-                        uv_lux=(
-                            node_telemetry_environment.uv_lux
-                            if node_telemetry_environment.uv_lux is not None
-                            else existing_node_telemetry_environment.uv_lux
-                        ),
-                        wind_direction=(
-                            node_telemetry_environment.wind_direction
-                            if node_telemetry_environment.wind_direction is not None
-                            else existing_node_telemetry_environment.wind_direction
-                        ),
-                        wind_speed=(
-                            node_telemetry_environment.wind_speed
-                            if node_telemetry_environment.wind_speed is not None
-                            else existing_node_telemetry_environment.wind_speed
-                        ),
-                        weight=(
-                            node_telemetry_environment.weight
-                            if node_telemetry_environment.weight is not None
-                            else existing_node_telemetry_environment.weight
-                        ),
-                        wind_gust=(
-                            node_telemetry_environment.wind_gust
-                            if node_telemetry_environment.wind_gust is not None
-                            else existing_node_telemetry_environment.wind_gust
-                        ),
-                        wind_lull=(
-                            node_telemetry_environment.wind_lull
-                            if node_telemetry_environment.wind_lull is not None
-                            else existing_node_telemetry_environment.wind_lull
-                        ),
-                        update_at=node_telemetry_environment.update_at,
-                        topic=node_telemetry_environment.topic,
+                        node_id=node_telemetry_environment.node_id,
+                        create_at=node_telemetry_environment.create_at,
+                        **data,
+                    )
+                    .on_conflict_do_update(
+                        index_elements=["node_id", "create_at"],
+                        set_=data,
                     )
                 )
+                await session.execute(stmt)
                 await session.commit()
-                await session.refresh(existing_node_telemetry_environment)
-                return existing_node_telemetry_environment
+                final_node_telemetry_environment = (
+                    await session.execute(
+                        select(NodeTelemetryEnvironment)
+                        .where(
+                            NodeTelemetryEnvironment.node_id
+                            == node_telemetry_environment.node_id
+                        )
+                        .where(
+                            NodeTelemetryEnvironment.create_at
+                            == node_telemetry_environment.create_at
+                        )
+                    )
+                ).scalar()
+                return final_node_telemetry_environment
             except Exception as e:
                 await session.rollback()
                 raise e
@@ -1344,72 +1285,70 @@ class MqttListenerService:
                             last_heard_at=node_telemetry_power.update_at,
                         )
                     )
+
                 # 檢查 NodeTelemetryPower 是否存在
-                result = await session.execute(
-                    select(NodeTelemetryPower)
-                    .where(NodeTelemetryPower.node_id == node_telemetry_power.node_id)
-                    .where(
-                        NodeTelemetryPower.create_at == node_telemetry_power.create_at
+                existing_node_telemetry_power = (
+                    await session.execute(
+                        select(NodeTelemetryPower)
+                        .where(
+                            NodeTelemetryPower.node_id == node_telemetry_power.node_id
+                        )
+                        .where(
+                            NodeTelemetryPower.create_at
+                            == node_telemetry_power.create_at
+                        )
                     )
-                )
-                existing_node_telemetry_power = result.scalar()
-                # 如果 NodeTelemetryPower 不存在，則新增
-                if existing_node_telemetry_power is None:
-                    session.add(node_telemetry_power)
-                    await session.commit()
-                    await session.refresh(node_telemetry_power)
-                    return node_telemetry_power
+                ).scalar()
+
                 # 如果 NodeTelemetryPower 存在，但傳入比較舊，則直接回傳
                 if (
-                    node_telemetry_power.update_at
+                    existing_node_telemetry_power is not None
+                    and node_telemetry_power.update_at
                     < existing_node_telemetry_power.update_at
                 ):
                     return existing_node_telemetry_power
-                # 更新 NodeTelemetryPower
-                await session.execute(
-                    update(NodeTelemetryPower)
-                    .where(NodeTelemetryPower.node_id == node_telemetry_power.node_id)
-                    .where(
-                        NodeTelemetryPower.create_at == node_telemetry_power.create_at
-                    )
+
+                # 動態構建 set_ 字典，移除值為 None 的鍵
+                data = {
+                    "ch1_voltage": node_telemetry_power.ch1_voltage,
+                    "ch1_current": node_telemetry_power.ch1_current,
+                    "ch2_voltage": node_telemetry_power.ch2_voltage,
+                    "ch2_current": node_telemetry_power.ch2_current,
+                    "ch3_voltage": node_telemetry_power.ch3_voltage,
+                    "ch3_current": node_telemetry_power.ch3_current,
+                    "update_at": node_telemetry_power.update_at,
+                    "topic": node_telemetry_power.topic,
+                }
+                data = {k: v for k, v in data.items() if v is not None}
+
+                # 使用 ON CONFLICT 子句來新增或更新
+                stmt = (
+                    insert(NodeTelemetryPower)
                     .values(
-                        ch1_voltage=(
-                            node_telemetry_power.ch1_voltage
-                            if node_telemetry_power.ch1_voltage is not None
-                            else existing_node_telemetry_power.ch1_voltage
-                        ),
-                        ch1_current=(
-                            node_telemetry_power.ch1_current
-                            if node_telemetry_power.ch1_current is not None
-                            else existing_node_telemetry_power.ch1_current
-                        ),
-                        ch2_voltage=(
-                            node_telemetry_power.ch2_voltage
-                            if node_telemetry_power.ch2_voltage is not None
-                            else existing_node_telemetry_power.ch2_voltage
-                        ),
-                        ch2_current=(
-                            node_telemetry_power.ch2_current
-                            if node_telemetry_power.ch2_current is not None
-                            else existing_node_telemetry_power.ch2_current
-                        ),
-                        ch3_voltage=(
-                            node_telemetry_power.ch3_voltage
-                            if node_telemetry_power.ch3_voltage is not None
-                            else existing_node_telemetry_power.ch3_voltage
-                        ),
-                        ch3_current=(
-                            node_telemetry_power.ch3_current
-                            if node_telemetry_power.ch3_current is not None
-                            else existing_node_telemetry_power.ch3_current
-                        ),
-                        update_at=node_telemetry_power.update_at,
-                        topic=node_telemetry_power.topic,
+                        node_id=node_telemetry_power.node_id,
+                        create_at=node_telemetry_power.create_at,
+                        **data,
+                    )
+                    .on_conflict_do_update(
+                        index_elements=["node_id", "create_at"],
+                        set_=data,
                     )
                 )
+                await session.execute(stmt)
                 await session.commit()
-                await session.refresh(existing_node_telemetry_power)
-                return existing_node_telemetry_power
+                final_node_telemetry_power = (
+                    await session.execute(
+                        select(NodeTelemetryPower)
+                        .where(
+                            NodeTelemetryPower.node_id == node_telemetry_power.node_id
+                        )
+                        .where(
+                            NodeTelemetryPower.create_at
+                            == node_telemetry_power.create_at
+                        )
+                    )
+                ).scalar()
+                return final_node_telemetry_power
             except Exception as e:
                 await session.rollback()
                 raise e
