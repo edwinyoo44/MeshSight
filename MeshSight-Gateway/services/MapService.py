@@ -202,8 +202,22 @@ class MapService:
                 node_a = next((x for x in items if x.id == edge.node_id), None)
                 if not node_a:
                     continue
+                node_a_position = node_a.positions[0]
                 node_b = next((x for x in items if x.id == edge.edge_node_id), None)
                 if not node_b:
+                    continue
+                node_b_position = node_b.positions[0]
+                # 計算 A 到 B 的距離
+                distanceA2B = MeshtasticUtil.calculate_distance_in_meters(
+                    node_a_position.latitude,
+                    node_a_position.longitude,
+                    node_b_position.latitude,
+                    node_b_position.longitude,
+                )
+                # 檢查是否超過距離限制
+                if distanceA2B > 24 * 1000:
+                    # LoRa 通常最遠到 16 km，來源 https://wikipedia.org/wiki/LoRa
+                    # 此限制用以防止使用手動定位的節點，導致使用者被誤導
                     continue
                 if (
                     min(node_a.id, node_b.id),
