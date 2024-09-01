@@ -860,6 +860,7 @@ class MqttListenerService:
                             last_heard_at=node_neighbor_info.update_at,
                         )
                     )
+
                 # 檢查 node_neighbor_info.last_sent_by_id 是否存在
                 if not await self.check_node_exist(node_neighbor_info.last_sent_by_id):
                     await self.create_node(
@@ -868,38 +869,55 @@ class MqttListenerService:
                             last_heard_at=node_neighbor_info.update_at,
                         )
                     )
+
                 # 檢查 NodeNeighborInfo 是否存在
-                result = await session.execute(
-                    select(NodeNeighborInfo).where(
-                        NodeNeighborInfo.node_id == node_neighbor_info.node_id
+                existing_node_neighbor_info = (
+                    await session.execute(
+                        select(NodeNeighborInfo).where(
+                            NodeNeighborInfo.node_id == node_neighbor_info.node_id
+                        )
                     )
-                )
-                existing_node_neighbor_info = result.scalar()
-                # 如果 NodeNeighborInfo 不存在，則新增
-                if existing_node_neighbor_info is None:
-                    session.add(node_neighbor_info)
-                    await session.commit()
-                    await session.refresh(node_neighbor_info)
-                    return node_neighbor_info
+                ).scalar()
+
                 # 如果 NodeNeighborInfo 存在，但傳入比較舊，則直接回傳
-                if node_neighbor_info.update_at < existing_node_neighbor_info.update_at:
+                if (
+                    existing_node_neighbor_info is not None
+                    and node_neighbor_info.update_at
+                    < existing_node_neighbor_info.update_at
+                ):
                     return existing_node_neighbor_info
-                # 更新 NodeNeighborInfo
-                await session.execute(
-                    update(NodeNeighborInfo)
-                    .where(NodeNeighborInfo.node_id == node_neighbor_info.node_id)
+
+                # 動態構建 set_ 字典，移除值為 None 的鍵
+                data = {
+                    "last_sent_by_id": node_neighbor_info.last_sent_by_id,
+                    "node_broadcast_interval_secs": node_neighbor_info.node_broadcast_interval_secs,
+                    "update_at": node_neighbor_info.update_at,
+                    "topic": node_neighbor_info.topic,
+                }
+                data = {k: v for k, v in data.items() if v is not None}
+
+                # 使用 ON CONFLICT 子句來新增或更新
+                stmt = (
+                    insert(NodeNeighborInfo)
                     .values(
-                        last_sent_by_id=node_neighbor_info.last_sent_by_id,
-                        node_broadcast_interval_secs=(
-                            node_neighbor_info.node_broadcast_interval_secs
-                        ),
-                        update_at=node_neighbor_info.update_at,
-                        topic=node_neighbor_info.topic,
+                        node_id=node_neighbor_info.node_id,
+                        **data,
+                    )
+                    .on_conflict_do_update(
+                        index_elements=["node_id"],
+                        set_=data,
                     )
                 )
+                await session.execute(stmt)
                 await session.commit()
-                await session.refresh(existing_node_neighbor_info)
-                return existing_node_neighbor_info
+                finanl_node_neighbor_info = (
+                    await session.execute(
+                        select(NodeNeighborInfo).where(
+                            NodeNeighborInfo.node_id == node_neighbor_info.node_id
+                        )
+                    )
+                ).scalar()
+                return finanl_node_neighbor_info
             except Exception as e:
                 await session.rollback()
                 raise e
