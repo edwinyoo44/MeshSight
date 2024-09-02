@@ -25,11 +25,13 @@ postgres:
 
 mqtt:
   client:
-    - host: "mqtt.meshtastic.org"
+    - hosts: ["mqtt.meshtastic.org"]
       port: 1883
       identifier: "MeshSight-Gateway"
       username: "meshdev"
       password: "large4cats"
+      showErrorLog: true
+      retryTime: 30 # 重試時間，單位為 second
       topics: [
           # https://meshtastic.org/docs/configuration/radio/lora/#region
           "msh/US/#",
@@ -57,11 +59,13 @@ mqtt:
           "msh/+/+/+/+/2/#",
           "msh/+/+/+/+/+/2/#",
         ]
-    - host: "test.mosquitto.org"
+    - hosts: ["test.mosquitto.org"]
       port: 1883
       identifier: "MeshSight_global"
       username: ""
       password: ""
+      showErrorLog: true
+      retryTime: 30 # 重試時間，單位為 second
       topics: [
           # custom
           "msh/+/2/#",
