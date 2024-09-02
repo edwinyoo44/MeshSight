@@ -15,6 +15,7 @@ meshtastic:
   neighborinfo:
     expire: 25 # 保留期限，單位為 hour
     maxQueryPeriod: 24 # 最大查詢期限，單位為 hour
+    maxDistance: 20000 # 最大距離，單位為 meter。LoRa 通常可達 16 至 20 公里，此限制用於防止手動定位的節點誤導使用者。來源：https://wikipedia.org/wiki/LoRa
 
 postgres:
   host: "MeshSight-Gateway-PostgreSQL"

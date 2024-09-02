@@ -117,9 +117,7 @@ class MapService:
                         node_b_position.longitude,
                     )
                     # 檢查是否超過距離限制
-                    if distanceA2B > 24 * 1000:
-                        # LoRa 通常最遠到 16 km，來源 https://wikipedia.org/wiki/LoRa
-                        # 此限制用以防止使用手動定位的節點，導致使用者被誤導
+                    if distanceA2B > self.config["meshtastic"]["neighborinfo"]["maxDistance"]:
                         continue
                     # 檢查是否沒加入過，則加入節點連線，確保較小的 ID 在前
                     if (
@@ -151,9 +149,7 @@ class MapService:
                             node_c_position.longitude,
                         )
                         # 檢查是否超過距離限制
-                        if distanceB2C > 24 * 1000:
-                            # LoRa 通常最遠到 16 km，來源 https://wikipedia.org/wiki/LoRa
-                            # 此限制用以防止使用手動定位的節點，導致使用者被誤導
+                        if distanceB2C > self.config["meshtastic"]["neighborinfo"]["maxDistance"]:
                             continue
                         # 檢查是否沒加入過
                         if (
@@ -179,9 +175,7 @@ class MapService:
                                 node_c_position.longitude,
                             )
                             # 檢查是否超過距離限制
-                            if distanceA2C > 24 * 1000:
-                                # LoRa 通常最遠到 16 km，來源 https://wikipedia.org/wiki/LoRa
-                                # 此限制用以防止使用手動定位的節點，導致使用者被誤導
+                            if distanceA2C > self.config["meshtastic"]["neighborinfo"]["maxDistance"]:
                                 continue
                             # 檢查是否沒加入過
                             sorted_ids = sorted([node_a_id, node_b_id, node_c_id])
@@ -215,9 +209,7 @@ class MapService:
                     node_b_position.longitude,
                 )
                 # 檢查是否超過距離限制
-                if distanceA2B > 24 * 1000:
-                    # LoRa 通常最遠到 16 km，來源 https://wikipedia.org/wiki/LoRa
-                    # 此限制用以防止使用手動定位的節點，導致使用者被誤導
+                if distanceA2B > self.config["meshtastic"]["neighborinfo"]["maxDistance"]:
                     continue
                 if (
                     min(node_a.id, node_b.id),
