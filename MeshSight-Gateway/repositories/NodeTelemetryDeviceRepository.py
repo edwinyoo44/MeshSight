@@ -10,7 +10,7 @@ from typing import List
 from fastapi import Depends
 from models.NodeTelemetryDeviceModel import NodeTelemetryDevice
 from schemas.pydantic.NodeSchema import TelemetryDeviceItem
-from sqlalchemy import desc, select, func
+from sqlalchemy import asc, desc, select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased, Session
 from utils.ConfigUtil import ConfigUtil
@@ -41,7 +41,7 @@ class NodeTelemetryDeviceRepository:
                 .where(NodeTelemetryDevice.node_id == node_id)
                 .where(NodeTelemetryDevice.create_at >= start)
                 .where(NodeTelemetryDevice.create_at <= end)
-                .order_by(desc(NodeTelemetryDevice.create_at))
+                .order_by(asc(NodeTelemetryDevice.create_at))
             )
             result = query.scalars().all()
             if not result:
