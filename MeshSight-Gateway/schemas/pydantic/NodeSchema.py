@@ -45,6 +45,13 @@ class TelemetryDeviceItem(BaseModel):
     channel: str  # 頻道
     rootTopic: str  # 根主題
 
+
+class NodeInfoResponse(BaseModel):
+    id: int  # ID
+    idHex: str  # ID HEX
+    item: InfoItem  # 資訊
+
+
 class NodeTelemetryDeviceResponse(BaseModel):
     id: int  # ID
     idHex: str  # ID HEX
