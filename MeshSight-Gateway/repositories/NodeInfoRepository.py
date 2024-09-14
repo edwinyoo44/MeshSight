@@ -94,7 +94,6 @@ class NodeInfoRepository:
                 return None
             result = result[0]
             return InfoItem(
-                nodeId=result.node_id,
                 longName=result.long_name,
                 shortName=result.short_name,
                 hardware=result.hw_model,

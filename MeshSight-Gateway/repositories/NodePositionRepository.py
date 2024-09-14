@@ -100,7 +100,6 @@ class NodePositionRepository:
                         raise ValueError(f"Invalid topic: {x.topic}")
 
                     item = PostionItem(
-                        nodeId=x.node_id,
                         latitude=x.latitude,
                         longitude=x.longitude,
                         altitude=x.altitude,

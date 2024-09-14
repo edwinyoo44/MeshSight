@@ -4,7 +4,6 @@ from pydantic import BaseModel
 
 
 class InfoItem(BaseModel):
-    nodeId: int  # node ID
     longName: str  # 長名稱
     shortName: str  # 短名稱
     hardware: Optional[str]  # 硬體
@@ -21,7 +20,6 @@ class InfoItem(BaseModel):
 
 
 class PostionItem(BaseModel):
-    nodeId: int  # node ID
     latitude: float  # 緯度
     longitude: float  # 經度
     altitude: Optional[float]  # 高度
@@ -34,8 +32,8 @@ class PostionItem(BaseModel):
     channel: str  # 頻道
     rootTopic: str  # 根主題
 
+
 class TelemetryDeviceItem(BaseModel):
-    nodeId: int  # node ID
     batteryLevel: Optional[float]  # 電池電量
     voltage: Optional[float]  # 電壓
     channelUtilization: Optional[float]  # 頻道利用率

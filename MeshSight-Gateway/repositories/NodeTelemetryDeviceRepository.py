@@ -61,7 +61,6 @@ class NodeTelemetryDeviceRepository:
                         raise ValueError(f"Invalid topic: {x.topic}")
                     
                     item = TelemetryDeviceItem(
-                        nodeId=x.node_id,
                         batteryLevel=x.battery_level,
                         voltage=x.voltage,
                         channelUtilization=x.channel_utilization,
