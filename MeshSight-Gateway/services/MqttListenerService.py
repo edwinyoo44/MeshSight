@@ -54,30 +54,32 @@ class MqttListenerService:
         await asyncio.gather(*tasks)
 
     async def handle_client(self, client_config):
+        tasks = []
         for host in client_config["hosts"]:
-            while True:
-                try:
-                    self.logger.info(f"正在訂閱 {host} 的服務...")
-                    async with aiomqtt.Client(
-                        hostname=host,
-                        port=client_config["port"],
-                        identifier=client_config["identifier"],
-                        username=client_config["username"],
-                        password=client_config["password"],
-                    ) as client:
-                        # 訂閱多個主題
-                        for topic in client_config["topics"]:
-                            await client.subscribe(topic)
-                        async for message in client.messages:
-                            await self.on_message(client, None, message)
-                except Exception as e:
-                    if (client_config["showErrorLog"]):
-                        self.logger.error(f"{inspect.currentframe().f_code.co_name}: {e}")
-                        self.logger.error(
-                            f"{host} 訂閱服務發生錯誤，正在重試..."
-                        )
-                    await asyncio.sleep(client_config["retryTime"])  # 等待一段時間後重試
-                    continue
+            tasks.append(self.subscribe_to_host(client_config, host))
+        await asyncio.gather(*tasks)
+
+    async def subscribe_to_host(self, client_config, host):
+        while True:
+            try:
+                async with aiomqtt.Client(
+                    hostname=host,
+                    port=client_config["port"],
+                    identifier=client_config["identifier"],
+                    username=client_config["username"],
+                    password=client_config["password"],
+                ) as client:
+                    # 訂閱多個主題
+                    for topic in client_config["topics"]:
+                        await client.subscribe(topic)
+                    async for message in client.messages:
+                        await self.on_message(client, None, message)
+            except Exception as e:
+                if client_config["showErrorLog"]:
+                    self.logger.error(f"{inspect.currentframe().f_code.co_name}: {e}")
+                    self.logger.error(f"{host} 訂閱服務發生錯誤，正在重試...")
+                await asyncio.sleep(client_config["retryTime"])  # 等待一段時間後重試
+                continue  # 繼續嘗試訂閱該主機
 
     async def on_message(self, client, userdata, message):
         try:
@@ -94,7 +96,15 @@ class MqttListenerService:
             # 解析訊息
             message_json = {}
             if "/2/json/" in topic:
-                message_json = json.loads(message.payload.decode("utf-8"))
+                try:
+                    message_json = json.loads(
+                        message.payload.decode("utf-8")
+                    )  # 嘗試使用 UTF-8 解碼
+                except UnicodeDecodeError:
+                    logging.error(
+                        f"Failed to decode message payload as UTF-8: {message.payload}"
+                    )
+                    return
                 message_json["topic"] = topic
                 if message_json.get("type") == "nodeinfo":
                     # raise Exception(f"NODEINFO 收 {message_json['payload']}")
@@ -224,6 +234,12 @@ class MqttListenerService:
             if "timestamp" not in message_json or message_json["timestamp"] == 0:
                 message_json["timestamp"] = datetime.now(timezone.utc).timestamp()
 
+            # 如果時間來自未來，則跳過
+            if datetime.fromtimestamp(
+                message_json["timestamp"], tz=timezone.utc
+            ) > datetime.now(timezone.utc):
+                return
+
             # 開始處理
             if message_json["type"] == "mapreport":
                 await self.handle_mapreport_app(message_json)
@@ -340,12 +356,6 @@ class MqttListenerService:
                 if latitude == 0 and longitude == 0:
                     return
 
-                # 如果時間來自未來，則跳過
-                if datetime.fromtimestamp(
-                    message_json.get("timestamp"), tz=timezone.utc
-                ) > datetime.now(timezone.utc):
-                    return
-
                 node_position = await self.create_or_update_node_position(
                     NodePosition(
                         node_id=message_json.get("from"),
@@ -460,12 +470,6 @@ class MqttListenerService:
 
             # 如果在 0 度線上，則跳過
             if latitude == 0 and longitude == 0:
-                return
-
-            # 如果時間來自未來，則跳過
-            if datetime.fromtimestamp(
-                message_json.get("timestamp"), tz=timezone.utc
-            ) > datetime.now(timezone.utc):
                 return
 
             # 新增 NodePosition
