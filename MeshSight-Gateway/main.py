@@ -10,7 +10,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from fastapi import FastAPI
 from fastapi.logger import logger as fastapi_logger
 from fastapi.middleware.cors import CORSMiddleware
-from routers.v1 import AnalysisRouter, AppRouter, MapRouter
+from routers.v1 import AnalysisRouter, AppRouter, MapRouter, NodeRouter
 from services.SystemSchedulerService import SystemSchedulerService
 from services.MqttListenerService import MqttListenerService
 from utils.ConfigUtil import ConfigUtil
@@ -37,6 +37,7 @@ app.add_middleware(
 app.include_router(AnalysisRouter.router)
 app.include_router(AppRouter.router)
 app.include_router(MapRouter.router)
+app.include_router(NodeRouter.router)
 
 
 async def start_api():

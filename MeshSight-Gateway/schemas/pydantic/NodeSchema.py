@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel
 
 
@@ -33,3 +33,21 @@ class PostionItem(BaseModel):
     viaIdHex: str  # 來源 node ID HEX
     channel: str  # 頻道
     rootTopic: str  # 根主題
+
+class TelemetryDeviceItem(BaseModel):
+    nodeId: int  # node ID
+    batteryLevel: Optional[float]  # 電池電量
+    voltage: Optional[float]  # 電壓
+    channelUtilization: Optional[float]  # 頻道利用率
+    airUtilTx: Optional[float]  # 空中利用率 TX
+    createAt: datetime  # 時間
+    updateAt: datetime  # 更新時間
+    viaId: int  # 來源 node ID
+    viaIdHex: str  # 來源 node ID HEX
+    channel: str  # 頻道
+    rootTopic: str  # 根主題
+
+class NodeTelemetryDeviceResponse(BaseModel):
+    id: int  # ID
+    idHex: str  # ID HEX
+    items: List[TelemetryDeviceItem]  # 遙測資訊
