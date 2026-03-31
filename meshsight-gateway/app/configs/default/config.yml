@@ -44,7 +44,8 @@ postgres:
 mqtt:
   client:
     - hosts: ["mqtt.meshtastic.org"]
-      port: 1883
+      port: 8883
+      tls: true
       identifier: "meshsight-gateway"
       username: "meshdev"
       password: "large4cats"
@@ -79,6 +80,7 @@ mqtt:
         ]
     - hosts: ["test.mosquitto.org"]
       port: 1883
+      tls: false
       identifier: "MeshSight_global"
       username: ""
       password: ""

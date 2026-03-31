@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 import json
 import math
 import numbers
+import ssl
 import aiomqtt
 import asyncio
 import inspect
@@ -63,12 +64,14 @@ class MqttListenerService:
     async def subscribe_to_host(self, client_config, host):
         while True:
             try:
+                tls_context = ssl.create_default_context() if client_config.get("tls", False) else None
                 async with aiomqtt.Client(
                     hostname=host,
                     port=client_config["port"],
                     identifier=client_config["identifier"],
                     username=client_config["username"],
                     password=client_config["password"],
+                    tls_context=tls_context,
                 ) as client:
                     # 訂閱多個主題
                     for topic in client_config["topics"]:
@@ -302,7 +305,7 @@ class MqttListenerService:
             # 回傳解密後的封包
             return mp
         except Exception as e:
-            self.logger.debug(f"解密失敗: {e}")
+            self.logger.debug(f"解密失敗: {e}，topic: {topic}, mp: {mp}")
             return None
 
     #################################
