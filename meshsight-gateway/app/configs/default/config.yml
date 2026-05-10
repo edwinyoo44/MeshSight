@@ -6,6 +6,15 @@ timezone: "UTC"
 cache:
   path: "/tmp/meshsight-gateway"
   ttl: 3600
+  keyPrefix: "meshsight:cache"
+  redis:
+    enabled: true
+    host: "meshsight-gateway-garnet"
+    port: 6379
+    db: 0
+    username: ""
+    password: ""
+    socketTimeout: 2
 
 meshtastic:
   channels:
