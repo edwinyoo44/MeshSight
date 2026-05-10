@@ -1,4 +1,5 @@
 import inspect
+import json
 import logging
 from app.exceptions.BusinessLogicException import BusinessLogicException
 from fastapi import Depends
@@ -8,6 +9,7 @@ from app.repositories.AnalysisDeviceActiveHourlyRepository import (
 )
 from app.repositories.NodeInfoRepository import NodeInfoRepository
 from app.utils.ConfigUtil import ConfigUtil
+from app.utils.OtherUtil import OtherUtil
 
 
 class AppService:
@@ -24,7 +26,12 @@ class AppService:
 
     async def setting_data(self) -> AppSettingDataResponse:
         try:
-            return AppSettingDataResponse(
+            cache_name = "AppService.setting_data"
+            cache_json = OtherUtil.read_cache_json(cache_name)
+            if cache_json:
+                return AppSettingDataResponse.parse_raw(cache_json)
+
+            response = AppSettingDataResponse(
                 meshtasticPositionMaxQueryPeriod=self.config["meshtastic"]["position"][
                     "maxQueryPeriod"
                 ],
@@ -32,6 +39,8 @@ class AppService:
                     "neighborinfo"
                 ]["maxQueryPeriod"],
             )
+            OtherUtil.write_cache_json(cache_name, json.dumps(response.dict(), default=str))
+            return response
         except BusinessLogicException as e:
             raise Exception(f"{str(e)}")
         except Exception as e:

@@ -1,4 +1,5 @@
 import inspect
+import json
 import logging
 import pytz
 from app.exceptions.BusinessLogicException import BusinessLogicException
@@ -14,6 +15,7 @@ from app.repositories.AnalysisDeviceActiveHourlyRepository import (
 )
 from app.repositories.NodeInfoRepository import NodeInfoRepository
 from app.utils.ConfigUtil import ConfigUtil
+from app.utils.OtherUtil import OtherUtil
 
 
 class AnalysisService:
@@ -38,6 +40,14 @@ class AnalysisService:
             except ValueError:
                 raise BusinessLogicException("查詢日期格式錯誤")
 
+            cache_name = (
+                "AnalysisService.active_hourly_records/"
+                f"{start_time.strftime('%Y%m%d%H%M%S')}_{end_time.strftime('%Y%m%d%H%M%S')}"
+            )
+            cache_json = OtherUtil.read_cache_json(cache_name)
+            if cache_json:
+                return AnalysisActiveHourlyRecordsResponse.parse_raw(cache_json)
+
             active_hourly_records = (
                 self.analysisDeviceActiveHourlyRepository.fetch_active_hourly_records(
                     start_time, end_time
@@ -54,7 +64,9 @@ class AnalysisService:
                         ).isoformat(),
                     )
                 )
-            return AnalysisActiveHourlyRecordsResponse(items=items)
+            response = AnalysisActiveHourlyRecordsResponse(items=items)
+            OtherUtil.write_cache_json(cache_name, json.dumps(response.dict(), default=str))
+            return response
         except BusinessLogicException as e:
             raise Exception(f"{str(e)}")
         except Exception as e:
@@ -63,6 +75,11 @@ class AnalysisService:
 
     async def distribution(self, type: str) -> AnalysisDistributionResponse:
         try:
+            cache_name = f"AnalysisService.distribution/{type}"
+            cache_json = OtherUtil.read_cache_json(cache_name)
+            if cache_json:
+                return AnalysisDistributionResponse.parse_raw(cache_json)
+
             if type == "hardware":
                 items = await self.nodeInfoRepository.fetch_distribution_hardware()
             elif type == "firmware":
@@ -71,7 +88,9 @@ class AnalysisService:
                 items = await self.nodeInfoRepository.fetch_distribution_role()
             else:
                 raise BusinessLogicException("不支援的分布類型")
-            return AnalysisDistributionResponse(items=items)
+            response = AnalysisDistributionResponse(items=items)
+            OtherUtil.write_cache_json(cache_name, json.dumps(response.dict(), default=str))
+            return response
         except BusinessLogicException as e:
             raise Exception(f"{str(e)}")
         except Exception as e:
