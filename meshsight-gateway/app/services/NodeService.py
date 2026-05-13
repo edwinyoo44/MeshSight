@@ -1,5 +1,6 @@
 from datetime import datetime
 import inspect
+import json
 import logging
 from typing import List
 from app.exceptions.BusinessLogicException import BusinessLogicException
@@ -15,6 +16,7 @@ from app.repositories.NodePositionRepository import NodePositionRepository
 from app.repositories.NodeTelemetryDeviceRepository import NodeTelemetryDeviceRepository
 from app.utils.ConfigUtil import ConfigUtil
 from app.utils.MeshtasticUtil import MeshtasticUtil
+from app.utils.OtherUtil import OtherUtil
 
 
 class NodeService:
@@ -33,11 +35,18 @@ class NodeService:
 
     async def info(self, node_id: int) -> NodeInfoResponse:
         try:
-            return NodeInfoResponse(
+            cache_name = f"NodeService.info/{node_id}"
+            cache_json = OtherUtil.read_cache_json(cache_name)
+            if cache_json:
+                return NodeInfoResponse.parse_raw(cache_json)
+
+            response = NodeInfoResponse(
                 id=node_id,
                 idHex=f"!{MeshtasticUtil.convert_node_id_from_int_to_hex(node_id)}",
                 item=await self.nodeInfoRepository.fetch_node_info_by_node_id(node_id),
             )
+            OtherUtil.write_cache_json(cache_name, json.dumps(response.dict(), default=str))
+            return response
         except BusinessLogicException as e:
             raise Exception(f"{str(e)}")
         except Exception as e:
@@ -46,17 +55,24 @@ class NodeService:
 
     async def position(self, node_id: int) -> NodePositionResponse:
         try:
+            cache_name = f"NodeService.position/{node_id}"
+            cache_json = OtherUtil.read_cache_json(cache_name)
+            if cache_json:
+                return NodePositionResponse.parse_raw(cache_json)
+
             # 取得節點座標資料
             node_positions: List[PositionItem] = (
                 await self.nodePositionRepository.fetch_node_position_by_node_id(
                     node_id, 1, True
                 )
             )
-            return NodePositionResponse(
+            response = NodePositionResponse(
                 id=node_id,
                 idHex=f"!{MeshtasticUtil.convert_node_id_from_int_to_hex(node_id)}",
                 position=node_positions[0] if node_positions else None,
             )
+            OtherUtil.write_cache_json(cache_name, json.dumps(response.dict(), default=str))
+            return response
         except BusinessLogicException as e:
             raise Exception(f"{str(e)}")
         except Exception as e:
@@ -75,13 +91,22 @@ class NodeService:
             self.logger.error(
                 f"node_id: {node_id}, start: {start_time}, end: {end_time}"
             )
-            response: NodeTelemetryDeviceResponse = NodeTelemetryDeviceResponse(
+            cache_name = (
+                "NodeService.telemetry_device/"
+                f"{node_id}_{start_time.strftime('%Y%m%d%H%M%S')}_{end_time.strftime('%Y%m%d%H%M%S')}"
+            )
+            cache_json = OtherUtil.read_cache_json(cache_name)
+            if cache_json:
+                return NodeTelemetryDeviceResponse.parse_raw(cache_json)
+
+            response = NodeTelemetryDeviceResponse(
                 id=node_id,
                 idHex=f"!{MeshtasticUtil.convert_node_id_from_int_to_hex(node_id)}",
                 items=await self.nodeTelemetryDeviceRepository.fetch_data_by_time_range(
                     node_id, start_time, end_time
                 ),
             )
+            OtherUtil.write_cache_json(cache_name, json.dumps(response.dict(), default=str))
             return response
         except BusinessLogicException as e:
             raise Exception(f"{str(e)}")

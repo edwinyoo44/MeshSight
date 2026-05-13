@@ -1,5 +1,4 @@
 import logging
-import os
 from app.configs.Database import get_db_connection_async
 from datetime import datetime, timedelta, timezone
 from app.models.AnalysisDeviceActiveHourlyModel import AnalysisDeviceActiveHourly
@@ -11,6 +10,7 @@ from sqlalchemy import delete
 from sqlalchemy.future import select
 from sqlalchemy.orm import aliased
 from app.utils.ConfigUtil import ConfigUtil
+from app.utils.OtherUtil import OtherUtil
 
 
 class SystemSchedulerService:
@@ -80,16 +80,8 @@ class SystemSchedulerService:
     # 清理 cache 檔案
     async def clear_cache(self):
         try:
-            # 取得 cache 路徑
-            cache_path = self.config["cache"]["path"]
-            # 清理 cache 檔案，只保留最近 1 天的檔案
-            for filename in os.listdir(cache_path):
-                file_path = os.path.join(cache_path, filename)
-                if os.path.isfile(file_path):
-                    file_time = os.path.getmtime(file_path)
-                    if file_time < datetime.now().timestamp() - 86400:
-                        os.remove(file_path)
-                        self.logger.debug(f"已清理 cache 檔案: {filename}")
+            backend, total_deleted = OtherUtil.clear_cache()
+            self.logger.debug(f"已清理 {backend} cache 項目: {total_deleted}")
         except Exception as e:
             self.logger.error(f"清理 cache 檔案時發生錯誤: {e}")
 
